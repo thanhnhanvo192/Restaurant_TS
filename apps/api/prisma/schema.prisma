@@ -1,0 +1,364 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============ Users & Auth ============
+
+model User {
+  id        Int     @id @default(autoincrement()) @db.UnsignedInt
+  name      String  @db.VarChar(100)
+  email     String? @unique @db.VarChar(150)
+  phone     String? @unique @db.VarChar(20)
+  password  String  @db.VarChar(255)
+  avatarUrl String? @map("avatar_url") @db.VarChar(500)
+  isActive  Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  reservations Reservation[]
+  orders       Order[]
+
+  @@map("users")
+}
+
+model Staff {
+  id       Int    @id @default(autoincrement()) @db.UnsignedInt
+  name     String @db.VarChar(100)
+  email    String @unique @db.VarChar(150)
+  phone    String? @db.VarChar(20)
+  password String @db.VarChar(255)
+
+  role     StaffRole
+  isActive Boolean   @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  reservationConfirmed Reservation[] @relation("confirmedBy")
+  orderConfirmed       Order[] @relation("confirmedBy")
+  tableSessions       TableSession[] @relation("openedBy")
+  invoices            Invoice[] @relation("createdBy")
+  inventoryTx         InventoryTransaction[] @relation("createdBy")
+
+  @@map("staff")
+}
+
+enum StaffRole {
+  manager
+  receptionist
+  warehouse
+}
+
+// ============ Tables & Reservations ============
+
+model Table {
+  id          Int     @id @default(autoincrement()) @db.UnsignedInt
+  tableNumber String  @unique @db.VarChar(10)
+  capacity    Int     @db.UnsignedInt
+  location    String? @db.VarChar(100)
+  status      TableStatus @default(available)
+  qrCodeUrl   String? @map("qr_code_url") @db.VarChar(500)
+  notes       String? @db.Text
+  isActive    Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  reservations  Reservation[]
+  tableSessions TableSession[]
+
+  @@map("tables")
+}
+
+enum TableStatus {
+  available
+  reserved
+  occupied
+  cleaning
+}
+
+model Reservation {
+  id            Int       @id @default(autoincrement()) @db.UnsignedInt
+  userId        Int       @db.UnsignedInt @map("user_id")
+  tableId       Int       @db.UnsignedInt @map("table_id")
+  reservedDate  DateTime  @map("reserved_date") @db.Date
+  reservedTime  DateTime  @map("reserved_time") @db.Time
+  guestCount    Int       @db.UnsignedInt @map("guest_count")
+  status        ReservationStatus @default(pending)
+
+  confirmedById Int?      @db.UnsignedInt @map("confirmed_by")
+  customerNote String?   @map("customer_note") @db.Text
+  staffNote    String?   @map("staff_note") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user       User  @relation(fields: [userId], references: [id])
+  table      Table @relation(fields: [tableId], references: [id])
+  confirmedBy Staff? @relation("confirmedBy", fields: [confirmedById], references: [id])
+
+  tableSession TableSession?
+
+  @@index([reservedDate, reservedTime, status], map: "idx_date_time")
+  @@index([userId], map: "idx_user")
+  @@index([status], map: "idx_status")
+  @@map("reservations")
+}
+
+enum ReservationStatus {
+  pending
+  confirmed
+  cancelled
+  completed
+}
+
+model TableSession {
+  id            Int       @id @default(autoincrement()) @db.UnsignedInt
+  tableId       Int       @db.UnsignedInt @map("table_id")
+  reservationId Int?      @unique @db.UnsignedInt @map("reservation_id")
+  openedById    Int?      @db.UnsignedInt @map("opened_by")
+  openedAt      DateTime  @default(now()) @map("opened_at")
+  closedAt      DateTime? @map("closed_at")
+  status        TableSessionStatus @default(open)
+
+  table       Table        @relation(fields: [tableId], references: [id])
+  reservation Reservation? @relation(fields: [reservationId], references: [id])
+  openedBy    Staff?       @relation("openedBy", fields: [openedById], references: [id])
+
+  orders  Order[]
+  invoice Invoice?
+
+  @@index([tableId, status], map: "idx_table_status")
+  @@map("table_sessions")
+}
+
+enum TableSessionStatus {
+  open
+  closed
+}
+
+// ============ Menu ============
+
+model MenuCategory {
+  id        Int     @id @default(autoincrement()) @db.UnsignedInt
+  name      String  @db.VarChar(100)
+  sortOrder Int     @default(0) @map("sort_order")
+  isActive  Boolean @default(true) @map("is_active")
+
+  menuItems MenuItem[]
+
+  @@map("menu_categories")
+}
+
+model MenuItem {
+  id          Int     @id @default(autoincrement()) @db.UnsignedInt
+  categoryId  Int     @db.UnsignedInt @map("category_id")
+  name        String  @db.VarChar(150)
+  description String? @db.Text
+  price       Decimal @db.Decimal(10, 2)
+  imageUrl    String? @map("image_url") @db.VarChar(500)
+  status      MenuItemStatus @default(available)
+  sortOrder   Int     @default(0) @map("sort_order")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  category       MenuCategory @relation(fields: [categoryId], references: [id])
+  orderItems     OrderItem[]
+  menuIngredients MenuIngredient[]
+
+  @@index([categoryId], map: "idx_category")
+  @@index([status], map: "idx_status")
+  @@map("menu_items")
+}
+
+enum MenuItemStatus {
+  available
+  unavailable
+}
+
+// ============ Orders ============
+
+model Order {
+  id            Int       @id @default(autoincrement()) @db.UnsignedInt
+  sessionId     Int       @db.UnsignedInt @map("session_id")
+  userId        Int?      @db.UnsignedInt @map("user_id")
+  status        OrderStatus @default(pending)
+  confirmedById Int?      @db.UnsignedInt @map("confirmed_by")
+  note          String?   @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  session      TableSession @relation(fields: [sessionId], references: [id])
+  user         User?        @relation(fields: [userId], references: [id])
+  confirmedBy  Staff?       @relation("confirmedBy", fields: [confirmedById], references: [id])
+
+  orderItems OrderItem[]
+
+  @@index([sessionId], map: "idx_session")
+  @@index([status], map: "idx_status")
+  @@map("orders")
+}
+
+enum OrderStatus {
+  pending
+  confirmed
+  preparing
+  served
+  cancelled
+}
+
+model OrderItem {
+  id         Int     @id @default(autoincrement()) @db.UnsignedInt
+  orderId    Int     @db.UnsignedInt @map("order_id")
+  menuItemId Int     @db.UnsignedInt @map("menu_item_id")
+  quantity   Int     @default(1) @db.UnsignedInt
+  unitPrice  Decimal @map("unit_price") @db.Decimal(10, 2)
+  note       String? @db.VarChar(255)
+
+  order    Order    @relation(fields: [orderId], references: [id])
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@map("order_items")
+}
+
+// ============ Invoices & Payments ============
+
+model Invoice {
+  id          Int     @id @default(autoincrement()) @db.UnsignedInt
+  sessionId   Int     @unique @db.UnsignedInt @map("session_id")
+  createdById Int     @db.UnsignedInt @map("created_by")
+  subtotal    Decimal @db.Decimal(10, 2)
+  discountPct Decimal @default(0) @map("discount_pct") @db.Decimal(5, 2)
+  discountAmount Decimal @default(0) @map("discount_amount") @db.Decimal(10, 2)
+  total       Decimal @db.Decimal(10, 2)
+  status      InvoiceStatus @default(unpaid)
+  notes       String? @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  paidAt    DateTime? @map("paid_at")
+
+  session   TableSession @relation(fields: [sessionId], references: [id])
+  createdBy Staff       @relation("createdBy", fields: [createdById], references: [id])
+
+  payments Payment[]
+
+  @@map("invoices")
+}
+
+enum InvoiceStatus {
+  unpaid
+  paid
+  cancelled
+}
+
+model Payment {
+  id               Int     @id @default(autoincrement()) @db.UnsignedInt
+  invoiceId        Int     @db.UnsignedInt @map("invoice_id")
+  method           PaymentMethod
+  amount           Decimal @db.Decimal(10, 2)
+  status           PaymentStatus @default(pending)
+  transactionId    String? @map("transaction_id") @db.VarChar(100)
+  gatewayResponse  Json? @map("gateway_response")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+
+  @@index([transactionId], map: "idx_transaction")
+  @@map("payments")
+}
+
+enum PaymentMethod {
+  cash
+  vnpay
+  momo
+}
+
+enum PaymentStatus {
+  pending
+  success
+  failed
+}
+
+// ============ Inventory ============
+
+model InventoryItem {
+  id         Int     @id @default(autoincrement()) @db.UnsignedInt
+  name       String  @db.VarChar(150)
+  unit       String  @db.VarChar(30)
+  itemType   InventoryItemType @map("item_type")
+  currentQty Decimal @default(0) @map("current_qty") @db.Decimal(10, 3)
+  minQty     Decimal @default(0) @map("min_qty") @db.Decimal(10, 3)
+  notes      String? @db.Text
+  isActive   Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  transactions InventoryTransaction[]
+  menuIngredients MenuIngredient[]
+
+  @@index([itemType], map: "idx_type")
+  @@index([currentQty, minQty], map: "idx_low_stock")
+  @@map("inventory_items")
+}
+
+enum InventoryItemType {
+  ingredient
+  product
+}
+
+model InventoryTransaction {
+  id         Int     @id @default(autoincrement()) @db.UnsignedInt
+  itemId     Int     @db.UnsignedInt @map("item_id")
+  type       InventoryTransactionType
+  quantity   Decimal @db.Decimal(10, 3)
+  qtyBefore  Decimal @map("qty_before") @db.Decimal(10, 3)
+  qtyAfter   Decimal @map("qty_after") @db.Decimal(10, 3)
+  supplier   String? @db.VarChar(150)
+  unitCost   Decimal? @map("unit_cost") @db.Decimal(10, 2)
+  referenceId Int?   @map("reference_id") @db.UnsignedInt
+  note       String? @db.Text
+  createdById Int    @db.UnsignedInt @map("created_by")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  item      InventoryItem @relation(fields: [itemId], references: [id])
+  createdBy Staff        @relation("createdBy", fields: [createdById], references: [id])
+
+  @@index([itemId], map: "idx_item")
+  @@index([createdAt], map: "idx_date")
+  @@map("inventory_transactions")
+}
+
+enum InventoryTransactionType {
+  in
+  out
+  adjustment
+}
+
+// ============ Menu Ingredients (Phase 2) ============
+
+model MenuIngredient {
+  id           Int     @id @default(autoincrement()) @db.UnsignedInt
+  menuItemId   Int     @db.UnsignedInt @map("menu_item_id")
+  inventoryId  Int     @db.UnsignedInt @map("inventory_id")
+  qtyPerPortion Decimal @map("qty_per_portion") @db.Decimal(10, 3)
+
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+  inventory InventoryItem @relation(fields: [inventoryId], references: [id])
+
+  @@unique([menuItemId, inventoryId], map: "uq_item_ingredient")
+  @@map("menu_ingredients")
+}

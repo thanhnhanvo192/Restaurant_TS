@@ -1,0 +1,27 @@
+{
+  "name": "restaurant-management",
+  "version": "1.0.0",
+  "description": "Restaurant Management System - Online Reservation & Order Management",
+  "private": true,
+  "workspaces": [
+    "apps/web",
+    "apps/api"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=apps/api & npm run dev --workspace=apps/web",
+    "build": "npm run build --workspace=apps/web && npm run build --workspace=apps/api",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces"
+  },
+  "keywords": [
+    "restaurant",
+    "reservation",
+    "order-management",
+    "nextjs",
+    "expressjs",
+    "mysql",
+    "prisma"
+  ],
+  "author": "",
+  "license": "MIT"
+}
