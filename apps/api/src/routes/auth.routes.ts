@@ -1,0 +1,22 @@
+import { Router } from "express";
+import { staffLogin, getStaffMe } from "../controllers/auth.controller";
+import { verifyStaffToken } from "../middlewares/auth.middleware";
+
+const router = Router();
+
+/**
+ * POST /api/auth/staff/login
+ * Body: { email, password }
+ * Response: { success, data: { id, name, email, role, token } }
+ */
+router.post("/staff/login", staffLogin);
+
+/**
+ * GET /api/auth/staff/me
+ * Protected route - require valid JWT token
+ * Header: Authorization: Bearer <token>
+ * Response: { success, data: { id, name, email, phone, role, isActive, createdAt, updatedAt } }
+ */
+router.get("/staff/me", verifyStaffToken, getStaffMe);
+
+export default router;

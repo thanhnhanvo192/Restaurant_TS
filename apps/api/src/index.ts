@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { createServer } from "http";
 import { Server } from "socket.io";
+import authRoutes from "./routes/auth.routes";
 
 dotenv.config();
 
@@ -27,9 +28,13 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// ============ Routes ============
+
+app.use("/api/auth", authRoutes);
+
 // ============ Basic Routes ============
 
-app.get("/health", (req: Request, res: Response) => {
+app.get("/health", (_req: Request, res: Response) => {
   res.json({
     success: true,
     data: {
@@ -39,7 +44,7 @@ app.get("/health", (req: Request, res: Response) => {
   });
 });
 
-app.get("/api/health", (req: Request, res: Response) => {
+app.get("/api/health", (_req: Request, res: Response) => {
   res.json({
     success: true,
     data: {
@@ -61,7 +66,7 @@ io.on("connection", (socket) => {
 
 // ============ Error Handling ============
 
-app.use((req: Request, res: Response) => {
+app.use((_req: Request, res: Response) => {
   res.status(404).json({
     success: false,
     error: "Route not found",
@@ -69,7 +74,7 @@ app.use((req: Request, res: Response) => {
   });
 });
 
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   console.error("[Error]", err);
 
   res.status(err.status || 500).json({
