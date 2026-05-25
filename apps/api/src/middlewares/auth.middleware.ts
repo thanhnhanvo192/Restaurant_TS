@@ -1,14 +1,21 @@
 import { Request, Response, NextFunction } from "express";
-import { verifyToken, StaffTokenPayload } from "../utils/jwt";
+import {
+  verifyToken,
+  StaffTokenPayload,
+  verifyUserToken,
+  UserTokenPayload,
+} from "../utils/jwt";
 
 /**
  * Extend Express Request để thêm user property
  * Khi middleware verifyStaffToken chạy, user sẽ được attach vào req
+ * Khi middleware verifyCustomerToken chạy, customer sẽ được attach vào req
  */
 declare global {
   namespace Express {
     interface Request {
       user?: StaffTokenPayload;
+      customer?: UserTokenPayload;
     }
   }
 }
@@ -94,4 +101,55 @@ export function requireRole(allowedRoles: StaffTokenPayload["role"][]) {
 
     next();
   };
+}
+
+/**
+ * Middleware để verify JWT token của customer từ Authorization header
+ * Extract Bearer token, verify, attach customer info vào req.customer
+ * Nếu invalid/missing → trả 401
+ */
+export async function verifyCustomerToken(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      res.status(401).json({
+        success: false,
+        error: "Missing authorization header",
+        code: "MISSING_AUTH_HEADER",
+      });
+      return;
+    }
+
+    // Extract token từ "Bearer <token>"
+    const parts = authHeader.split(" ");
+    if (parts.length !== 2 || parts[0] !== "Bearer") {
+      res.status(401).json({
+        success: false,
+        error: "Invalid authorization format. Expected: Bearer <token>",
+        code: "INVALID_AUTH_FORMAT",
+      });
+      return;
+    }
+
+    const token = parts[1];
+
+    // Verify token
+    const payload = await verifyUserToken(token);
+    req.customer = payload;
+
+    next();
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Token verification failed";
+
+    res.status(401).json({
+      success: false,
+      error: message,
+      code: "INVALID_TOKEN",
+    });
+  }
 }

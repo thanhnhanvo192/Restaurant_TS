@@ -23,8 +23,8 @@
 
 ### Slice 3 — Auth Customer
 
-- [ ] POST /api/auth/customer/register
-- [ ] POST /api/auth/customer/login
+- [x] POST /api/auth/customer/register
+- [x] POST /api/auth/customer/login
 - [ ] Trang register/login khách
 
 ### Slice 4 — Table Management
