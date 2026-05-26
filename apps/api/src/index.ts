@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import authRoutes from "./routes/auth.routes";
+import tableRoutes from "./routes/table.routes";
 
 dotenv.config();
 
@@ -31,6 +32,7 @@ app.use(express.urlencoded({ extended: true }));
 // ============ Routes ============
 
 app.use("/api/auth", authRoutes);
+app.use("/api/tables", tableRoutes);
 
 // ============ Basic Routes ============
 
