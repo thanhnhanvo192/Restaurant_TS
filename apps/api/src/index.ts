@@ -3,8 +3,10 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { createServer } from "http";
 import { Server } from "socket.io";
+import path from "path";
 import authRoutes from "./routes/auth.routes";
 import tableRoutes from "./routes/table.routes";
+import menuRoutes from "./routes/menu.routes";
 
 dotenv.config();
 
@@ -29,10 +31,14 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve uploaded files as static content
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+
 // ============ Routes ============
 
 app.use("/api/auth", authRoutes);
 app.use("/api/tables", tableRoutes);
+app.use("/api/menu", menuRoutes);
 
 // ============ Basic Routes ============
 

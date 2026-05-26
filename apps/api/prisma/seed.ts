@@ -82,6 +82,188 @@ async function main() {
 
   console.log("✅ QR codes generated for", tablesWithQR.length, "tables");
 
+  // ============ Menu Seeding ============
+
+  console.log("🍽️  Creating menu categories...");
+
+  const categories = await Promise.all([
+    prisma.menuCategory.upsert({
+      where: { id: 1 },
+      update: {},
+      create: {
+        id: 1,
+        name: "Khai vị",
+        sortOrder: 1,
+        isActive: true,
+      },
+    }),
+    prisma.menuCategory.upsert({
+      where: { id: 2 },
+      update: {},
+      create: {
+        id: 2,
+        name: "Món chính",
+        sortOrder: 2,
+        isActive: true,
+      },
+    }),
+    prisma.menuCategory.upsert({
+      where: { id: 3 },
+      update: {},
+      create: {
+        id: 3,
+        name: "Đồ uống",
+        sortOrder: 3,
+        isActive: true,
+      },
+    }),
+  ]);
+
+  console.log("✅ Menu categories created:", categories.length);
+
+  // Create 10 sample menu items
+  console.log("🍽️  Creating menu items...");
+
+  const menuItems = await Promise.all([
+    // Khai vị (3 items)
+    prisma.menuItem.upsert({
+      where: { id: 1 },
+      update: {},
+      create: {
+        id: 1,
+        categoryId: 1,
+        name: "Gỏi cuốn tôm",
+        description: "Gỏi cuốn tôm tươi với rau sống",
+        price: "45000",
+        status: "available",
+        sortOrder: 1,
+      },
+    }),
+    prisma.menuItem.upsert({
+      where: { id: 2 },
+      update: {},
+      create: {
+        id: 2,
+        categoryId: 1,
+        name: "Chả cua",
+        description: "Chả cua nước giòn ngoài mềm trong",
+        price: "55000",
+        status: "available",
+        sortOrder: 2,
+      },
+    }),
+    prisma.menuItem.upsert({
+      where: { id: 3 },
+      update: {},
+      create: {
+        id: 3,
+        categoryId: 1,
+        name: "Canh cua cà chua",
+        description: "Canh cua tươi nấu cà chua chua thanh",
+        price: "65000",
+        status: "available",
+        sortOrder: 3,
+      },
+    }),
+
+    // Món chính (5 items)
+    prisma.menuItem.upsert({
+      where: { id: 4 },
+      update: {},
+      create: {
+        id: 4,
+        categoryId: 2,
+        name: "Cơm tấm sườn nướng",
+        description: "Cơm tấm được caramel, sườn nướng thơm lạ",
+        price: "85000",
+        status: "available",
+        sortOrder: 1,
+      },
+    }),
+    prisma.menuItem.upsert({
+      where: { id: 5 },
+      update: {},
+      create: {
+        id: 5,
+        categoryId: 2,
+        name: "Mì Hoàng Kim",
+        description: "Mì trứng chiên khoai lang nóng",
+        price: "75000",
+        status: "available",
+        sortOrder: 2,
+      },
+    }),
+    prisma.menuItem.upsert({
+      where: { id: 6 },
+      update: {},
+      create: {
+        id: 6,
+        categoryId: 2,
+        name: "Bún chả Hà Nội",
+        description: "Bún tươi, chả nướng, thịt nướng",
+        price: "80000",
+        status: "available",
+        sortOrder: 3,
+      },
+    }),
+    prisma.menuItem.upsert({
+      where: { id: 7 },
+      update: {},
+      create: {
+        id: 7,
+        categoryId: 2,
+        name: "Phở bò",
+        description: "Phở bò nấu 12 tiếng, hương vị đậm đà",
+        price: "70000",
+        status: "available",
+        sortOrder: 4,
+      },
+    }),
+    prisma.menuItem.upsert({
+      where: { id: 8 },
+      update: {},
+      create: {
+        id: 8,
+        categoryId: 2,
+        name: "Cá kho tộ",
+        description: "Cá kho tộ nấu với cà rốt, dứa",
+        price: "95000",
+        status: "available",
+        sortOrder: 5,
+      },
+    }),
+
+    // Đồ uống (2 items)
+    prisma.menuItem.upsert({
+      where: { id: 9 },
+      update: {},
+      create: {
+        id: 9,
+        categoryId: 3,
+        name: "Nước chanh tươi",
+        description: "Nước chanh tươi ép ngay, đá",
+        price: "20000",
+        status: "available",
+        sortOrder: 1,
+      },
+    }),
+    prisma.menuItem.upsert({
+      where: { id: 10 },
+      update: {},
+      create: {
+        id: 10,
+        categoryId: 3,
+        name: "Cà phê đen",
+        description: "Cà phê đen pha phin, nóng",
+        price: "18000",
+        status: "available",
+        sortOrder: 2,
+      },
+    }),
+  ]);
+
+  console.log("✅ Menu items created:", menuItems.length);
+
   console.log("🎉 Seed completed successfully!");
 }
 

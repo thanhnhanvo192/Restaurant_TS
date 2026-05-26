@@ -2,7 +2,12 @@
 
 ## Đang làm
 
-(trống — chưa bắt đầu)
+### Slice 4 — Table Management (API ✓)
+
+- [x] CRUD API cho tables
+- [x] Generate QR code API
+- [ ] Trang quản lý bàn (manager)
+- [ ] Sơ đồ bàn realtime (receptionist)
 
 ## Cần làm — theo thứ tự
 
@@ -29,8 +34,8 @@
 
 ### Slice 4 — Table Management
 
-- [ ] CRUD API cho tables
-- [ ] Generate QR code API
+- [x] CRUD API cho tables
+- [x] Generate QR code API
 - [ ] Trang quản lý bàn (manager)
 - [ ] Sơ đồ bàn realtime (receptionist)
 
