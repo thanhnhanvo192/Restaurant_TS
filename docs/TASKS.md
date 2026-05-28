@@ -58,10 +58,14 @@
 
 ### Slice 8 — Order + Realtime
 
-- [ ] POST /api/orders — tạo order
-- [ ] PATCH /api/orders/:id/confirm (receptionist)
-- [ ] PATCH /api/orders/:id/complete (kitchen)
-- [ ] Socket.IO: new-order, order-confirmed, order-completed events
+- [x] POST /api/orders — tạo order (PUBLIC endpoint)
+- [x] GET /api/orders/:sessionId — lấy danh sách order của session
+- [x] PATCH /api/orders/:id/confirm — receptionist confirm order tới bếp
+- [x] PATCH /api/orders/:id/complete — receptionist mark order completed
+- [x] PATCH /api/orders/:id/cancel — receptionist cancel order
+- [x] Socket.IO: new-order, order-confirmed, order-completed events
+- [x] Socket.IO room assignment per PRD (receptionist joins both staff:receptionist + staff:kitchen)
+- [x] Zod validation cho order items + error handling
 - [ ] Trang gọi món (customer)
 - [ ] Màn hình order management (receptionist)
 
@@ -112,6 +116,8 @@
 ### Slice 6 — Reservation (API) ✓
 
 ### Slice 7 — QR Scan & Table Session (API) ✓
+
+### Slice 8 — Order + Realtime (API + Socket.IO) ✓
 
 ## Known Issues / Tech Debt
 

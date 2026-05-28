@@ -17,10 +17,10 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Configure multer storage
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: (_req, _file, cb) => {
     cb(null, uploadsDir);
   },
-  filename: (req, file, cb) => {
+  filename: (_req, file, cb) => {
     // Generate unique filename: timestamp-filename
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
@@ -31,7 +31,7 @@ const storage = multer.diskStorage({
 
 // File filter - only allow images
 const fileFilter = (
-  req: any,
+  _req: any,
   file: Express.Multer.File,
   cb: multer.FileFilterCallback,
 ) => {
@@ -65,7 +65,7 @@ const upload = multer({
 /**
  * Middleware para handle erros do multer
  */
-function handleMulterError(err: any, req: any, res: any, next: any) {
+function handleMulterError(err: any, _req: any, res: any, next: any) {
   if (err instanceof multer.MulterError) {
     // Multer specific error
     if (err.code === "LIMIT_FILE_SIZE") {
@@ -99,7 +99,7 @@ function handleMulterError(err: any, req: any, res: any, next: any) {
  * - snake_case → camelCase
  * - numeric strings → numbers
  */
-function parseFormData(req: any, res: any, next: any) {
+function parseFormData(req: any, _res: any, next: any) {
   if (req.body) {
     const transformed: any = {};
 

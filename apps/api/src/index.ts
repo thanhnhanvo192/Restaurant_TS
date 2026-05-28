@@ -9,7 +9,8 @@ import tableRoutes from "./routes/table.routes";
 import menuRoutes from "./routes/menu.routes";
 import reservationRoutes from "./routes/reservation.routes";
 import tableSessionRoutes from "./routes/tableSession.routes";
-import { verifyToken } from "./utils/jwt";
+import orderRoutes from "./routes/order.routes";
+import { initializeSocket } from "./socket";
 
 dotenv.config();
 
@@ -18,12 +19,15 @@ const httpServer = createServer(app);
 
 // ============ Socket.IO Setup ============
 
-export const io = new Server(httpServer, {
+const io = new Server(httpServer, {
   cors: {
     origin: process.env.FRONTEND_URL || "http://localhost:3000",
     credentials: true,
   },
 });
+
+// Initialize Socket.IO service with authentication and room management
+initializeSocket(io);
 
 // ============ Middleware ============
 
@@ -46,6 +50,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/tables", tableRoutes);
 app.use("/api/menu", menuRoutes);
 app.use("/api/reservations", reservationRoutes);
+app.use("/api/orders", orderRoutes);
 app.use("/api", tableSessionRoutes);
 
 // ============ Basic Routes ============
@@ -70,60 +75,9 @@ app.get("/api/health", (_req: Request, res: Response) => {
   });
 });
 
-// ============ Socket.IO Handlers ============
-
-io.on("connection", (socket) => {
-  console.log(`[Socket.IO] ✅ User connected: ${socket.id}`);
-
-  // Staff joining their role-specific rooms
-  socket.on("join-room", async (data: { room: string; token?: string }) => {
-    try {
-      if (!data.room) {
-        console.log(`[Socket.IO] ❌ ${socket.id} - Room name is required`);
-        socket.emit("error", { message: "Room name is required" });
-        return;
-      }
-
-      // Validate token for staff rooms
-      if (data.room.startsWith("staff:")) {
-        if (!data.token) {
-          console.log(`[Socket.IO] ❌ ${socket.id} - No token for staff room`);
-          socket.emit("error", {
-            message: "Authentication required for staff rooms",
-          });
-          return;
-        }
-
-        try {
-          const payload = await verifyToken(data.token);
-          console.log(
-            `[Socket.IO] ✅ Staff ${payload.id} (${payload.role}) joining: ${data.room}`,
-          );
-        } catch (error) {
-          console.log(`[Socket.IO] ❌ ${socket.id} - Invalid token`);
-          socket.emit("error", { message: "Invalid token" });
-          return;
-        }
-      }
-
-      socket.join(data.room);
-      console.log(
-        `[Socket.IO] ✅ ${socket.id} successfully joined room: ${data.room}`,
-      );
-      socket.emit("room-joined", { room: data.room, success: true });
-    } catch (error) {
-      console.error(
-        `[Socket.IO] ❌ Error in join-room for ${socket.id}:`,
-        error,
-      );
-      socket.emit("error", { message: "Failed to join room" });
-    }
-  });
-
-  socket.on("disconnect", () => {
-    console.log(`[Socket.IO] ⛔ User disconnected: ${socket.id}`);
-  });
-});
+// ============ Socket.IO ============
+// Socket.IO handlers are managed by SocketService (initialized above)
+// No manual handlers needed here
 
 // ============ Error Handling ============
 

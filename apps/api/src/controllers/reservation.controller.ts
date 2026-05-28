@@ -145,13 +145,6 @@ export async function getAvailableTables(
     const requestedDateTime = new Date(reservedDate);
     requestedDateTime.setHours(hour, minute, 0, 0);
 
-    const windowStart = new Date(
-      requestedDateTime.getTime() - 2 * 60 * 60 * 1000,
-    );
-    const windowEnd = new Date(
-      requestedDateTime.getTime() + 2 * 60 * 60 * 1000,
-    );
-
     // Get all active tables with their availability
     const availableTables = await prisma.table.findMany({
       where: {
@@ -226,7 +219,8 @@ export async function createReservation(
     const body = createReservationSchema.parse(req.body);
 
     const reservedDate = new Date(body.date);
-    const [hour, minute] = body.time.split(":").map(Number);
+    // Parse time for validation
+    const [_hour, _minute] = body.time.split(":").map(Number);
 
     // Check if table is available
     const available = await isTableAvailable(

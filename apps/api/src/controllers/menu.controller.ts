@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
-import { PrismaClient, MenuItemStatus } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import path from "path";
 import fs from "fs";
 
@@ -53,7 +53,7 @@ const toggleStatusSchema = z.object({
  * Get all active categories (staff only)
  */
 export async function getCategories(
-  req: Request,
+  _req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
@@ -227,7 +227,7 @@ export async function deleteCategory(
  * Get public menu - all active categories and items (NO AUTH REQUIRED)
  */
 export async function getPublicMenu(
-  req: Request,
+  _req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
