@@ -1,14 +1,5 @@
 # Tasks — Restaurant Management System
 
-## Đang làm
-
-### Slice 4 — Table Management (API ✓)
-
-- [x] CRUD API cho tables
-- [x] Generate QR code API
-- [ ] Trang quản lý bàn (manager)
-- [ ] Sơ đồ bàn realtime (receptionist)
-
 ## Cần làm — theo thứ tự
 
 ### Slice 1 — Database setup
@@ -41,17 +32,20 @@
 
 ### Slice 5 — Menu Management
 
-- [ ] CRUD API menu categories
-- [ ] CRUD API menu items (với upload ảnh)
+- [x] CRUD API menu categories
+- [x] CRUD API menu items (với upload ảnh)
 - [ ] Trang quản lý thực đơn (manager)
 - [ ] Trang xem thực đơn (customer)
 
 ### Slice 6 — Reservation
 
-- [ ] POST /api/reservations — đặt bàn
-- [ ] GET /api/reservations — danh sách (receptionist)
-- [ ] PATCH /api/reservations/:id/confirm
-- [ ] Socket.IO: emit khi có đặt bàn mới
+- [x] GET /api/reservations/available-tables
+- [x] POST /api/reservations
+- [x] GET /api/reservations (receptionist/manager)
+- [x] GET /api/reservations/my (customer)
+- [x] PATCH /api/reservations/:id/confirm
+- [x] PATCH /api/reservations/:id/cancel
+- [x] Socket.IO: emit khi có đặt bàn mới
 - [ ] Trang đặt bàn (customer)
 - [ ] Trang xử lý đặt bàn (receptionist)
 
@@ -104,7 +98,17 @@
 
 ## Đã xong
 
-(trống — chưa bắt đầu)
+### Slice 1 — Database setup ✓
+
+### Slice 2 — Auth Staff ✓
+
+### Slice 3 — Auth Customer ✓
+
+### Slice 4 — Table Management (API) ✓
+
+### Slice 5 — Menu Management (API) ✓
+
+### Slice 6 — Reservation (API) ✓
 
 ## Known Issues / Tech Debt
 

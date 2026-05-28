@@ -343,6 +343,7 @@ export async function loginCustomer(
       res.status(401).json({
         success: false,
         error: "Invalid email/phone or password",
+        // error: "Password failed",
         code: "INVALID_CREDENTIALS",
       });
       return;
