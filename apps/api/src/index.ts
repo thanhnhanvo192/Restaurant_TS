@@ -8,6 +8,7 @@ import authRoutes from "./routes/auth.routes";
 import tableRoutes from "./routes/table.routes";
 import menuRoutes from "./routes/menu.routes";
 import reservationRoutes from "./routes/reservation.routes";
+import tableSessionRoutes from "./routes/tableSession.routes";
 import { verifyToken } from "./utils/jwt";
 
 dotenv.config();
@@ -45,6 +46,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/tables", tableRoutes);
 app.use("/api/menu", menuRoutes);
 app.use("/api/reservations", reservationRoutes);
+app.use("/api", tableSessionRoutes);
 
 // ============ Basic Routes ============
 

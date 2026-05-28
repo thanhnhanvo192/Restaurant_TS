@@ -51,9 +51,10 @@
 
 ### Slice 7 — QR Scan & Table Session
 
-- [ ] GET /api/tables/:tableId — thông tin bàn
-- [ ] POST /api/table-sessions — mở session
-- [ ] Route /table/[tableId] (Next.js)
+- [x] GET /api/tables/:tableId/session — thông tin bàn + session hiện tại
+- [x] POST /api/tables/:tableId/session — mở session (PUBLIC, tạo session mới nếu bàn available, trả session hiện tại nếu occupied)
+- [x] PATCH /api/sessions/:id/close — đóng session (receptionist only)
+- [ ] Route /table/[tableId] (Next.js) — customer trang gọi món
 
 ### Slice 8 — Order + Realtime
 
@@ -109,6 +110,8 @@
 ### Slice 5 — Menu Management (API) ✓
 
 ### Slice 6 — Reservation (API) ✓
+
+### Slice 7 — QR Scan & Table Session (API) ✓
 
 ## Known Issues / Tech Debt
 
