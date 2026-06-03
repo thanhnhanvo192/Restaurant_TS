@@ -12,6 +12,7 @@ import tableSessionRoutes from "./routes/tableSession.routes";
 import orderRoutes from "./routes/order.routes";
 import invoiceRoutes from "./routes/invoice.routes";
 import inventoryRoutes from "./routes/inventory.routes";
+import statsRoutes from "./routes/stats.routes";
 import { initializeSocket } from "./socket";
 
 dotenv.config();
@@ -55,6 +56,7 @@ app.use("/api/reservations", reservationRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/inventory", inventoryRoutes);
+app.use("/api/stats", statsRoutes);
 app.use("/api", tableSessionRoutes);
 
 // ============ Basic Routes ============
