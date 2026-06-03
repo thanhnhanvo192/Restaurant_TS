@@ -71,9 +71,15 @@
 
 ### Slice 9 — Invoice + Cash Payment
 
-- [ ] POST /api/invoices
-- [ ] POST /api/payments/cash
+- [x] POST /api/invoices — tạo invoice từ served orders (receptionist/manager)
+- [x] GET /api/invoices/:id — lấy invoice (staff)
+- [x] GET /api/invoices/sessions/:sessionId/invoice — lấy invoice theo session (staff)
+- [x] POST /api/invoices/:id/pay/cash — thanh toán tiền mặt, atomic transaction (receptionist/manager)
+- [x] Discount support (0-100%)
+- [x] Transaction safety: Prisma $transaction cho invoice + payment + session + table updates
+- [x] Socket.IO event: emit 'invoice-paid' to staff:receptionist
 - [ ] Trang hoá đơn + thanh toán (receptionist)
+- [ ] Integration tests (manual testing guide tại docs/SLICE9-MANUAL-TESTING.md)
 
 ### Slice 10 — Online Payment
 
@@ -83,10 +89,15 @@
 
 ### Slice 11 — Inventory
 
-- [ ] CRUD API inventory items
-- [ ] POST /api/inventory/transactions
-- [ ] Cảnh báo tồn kho thấp
-- [ ] Trang quản lý kho (warehouse)
+- [x] CRUD API inventory items (getItems, createItem, updateItem)
+- [x] Inventory transactions (addStock, adjustStock, getTransactions)
+- [x] Low stock detection (getLowStockItems)
+- [x] Prisma transaction safety (atomic operations)
+- [x] Zod validation + error handling
+- [x] Role-based access (warehouse/manager read + add, manager adjust)
+- [x] Audit trail (staff ID, timestamps, qty tracking)
+- [x] Complete test suite (6/6 tests passed)
+- [ ] Frontend: Trang quản lý kho (warehouse)
 
 ### Slice 12 — Dashboard & Stats
 
@@ -118,6 +129,10 @@
 ### Slice 7 — QR Scan & Table Session (API) ✓
 
 ### Slice 8 — Order + Realtime (API + Socket.IO) ✓
+
+### Slice 9 — Invoice + Cash Payment (API) ✓
+
+### Slice 11 — Inventory (API) ✓
 
 ## Known Issues / Tech Debt
 

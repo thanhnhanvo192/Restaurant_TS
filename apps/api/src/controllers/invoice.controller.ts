@@ -382,7 +382,7 @@ export async function payByCash(
     // Transaction: payment + invoice + session + table
     const result = await prisma.$transaction(async (tx) => {
       // 1. Tạo payment record
-      const payment = await tx.payment.create({
+      await tx.payment.create({
         data: {
           invoiceId: invoiceId,
           method: "cash",
