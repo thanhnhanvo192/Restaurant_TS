@@ -101,8 +101,13 @@
 
 ### Slice 12 — Dashboard & Stats
 
-- [ ] GET /api/stats/revenue
-- [ ] GET /api/stats/top-items
+- [x] POST /api/stats/revenue (getRevenueSummary — today/week/month)
+- [x] GET /api/stats/revenue-chart (getRevenueChart — 30 days with gap fill)
+- [x] GET /api/stats/top-items (getTopItems — top items by quantity + revenue, with optional date range)
+- [x] Manager-only role protection on all stats endpoints
+- [x] Zod validation + error handling
+- [x] Prisma $queryRaw with template literals
+- [x] Complete test suite (all 4 test categories passed)
 - [ ] Dashboard page (manager)
 
 ### Slice 13 — Polish
@@ -133,6 +138,8 @@
 ### Slice 9 — Invoice + Cash Payment (API) ✓
 
 ### Slice 11 — Inventory (API) ✓
+
+### Slice 12 — Statistics API ✓
 
 ## Known Issues / Tech Debt
 

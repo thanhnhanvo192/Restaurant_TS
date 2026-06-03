@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { PrismaClient, TableStatus, TableSessionStatus } from "@prisma/client";
+import { getSocketService } from "../socket";
 
 const prisma = new PrismaClient();
 
@@ -201,6 +202,17 @@ export async function openSession(
         success: true,
         data: result,
       });
+
+      // Emit table status changed to occupied
+      try {
+        const socketService = getSocketService();
+        socketService.emitToReceptionists("table-status-changed", {
+          tableId: id,
+          status: "occupied",
+        });
+      } catch (socketError) {
+        console.error("[Socket] Failed to emit table-status-changed in openSession:", socketError);
+      }
     } else if (table.status === TableStatus.occupied) {
       // Table is already occupied, return existing session
       if (table.tableSessions.length === 0) {
@@ -336,6 +348,17 @@ export async function closeSession(
       success: true,
       data: result,
     });
+
+    // Emit table status changed to cleaning
+    try {
+      const socketService = getSocketService();
+      socketService.emitToReceptionists("table-status-changed", {
+        tableId: session.tableId,
+        status: "cleaning",
+      });
+    } catch (socketError) {
+      console.error("[Socket] Failed to emit table-status-changed in closeSession:", socketError);
+    }
   } catch (error) {
     if (error instanceof z.ZodError) {
       res.status(400).json({

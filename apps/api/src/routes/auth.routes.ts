@@ -1,6 +1,14 @@
 import { Router } from "express";
-import { staffLogin, getStaffMe, registerCustomer, loginCustomer } from "../controllers/auth.controller";
-import { verifyStaffToken } from "../middlewares/auth.middleware";
+import { 
+  staffLogin, 
+  getStaffMe, 
+  registerCustomer, 
+  loginCustomer,
+  getStaffList,
+  createStaff,
+  updateStaff
+} from "../controllers/auth.controller";
+import { verifyStaffToken, requireRole } from "../middlewares/auth.middleware";
 
 const router = Router();
 
@@ -20,6 +28,27 @@ router.post("/staff/login", staffLogin);
 router.get("/staff/me", verifyStaffToken, getStaffMe);
 
 /**
+ * GET /api/auth/staff
+ * Get list of all staff members
+ * Access: manager only
+ */
+router.get("/staff", verifyStaffToken, requireRole(["manager"]), getStaffList);
+
+/**
+ * POST /api/auth/staff
+ * Create a new staff member
+ * Access: manager only
+ */
+router.post("/staff", verifyStaffToken, requireRole(["manager"]), createStaff);
+
+/**
+ * PATCH /api/auth/staff/:id
+ * Update staff details or toggle status
+ * Access: manager only
+ */
+router.patch("/staff/:id", verifyStaffToken, requireRole(["manager"]), updateStaff);
+
+/**
  * POST /api/auth/customer/register
  * Body: { name, email?, phone?, password }
  * Response: { success, data: { id, name, email?, phone?, token } }
@@ -34,3 +63,4 @@ router.post("/customer/register", registerCustomer);
 router.post("/customer/login", loginCustomer);
 
 export default router;
+

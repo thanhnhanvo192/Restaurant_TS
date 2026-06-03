@@ -382,3 +382,232 @@ export async function loginCustomer(
     next(error);
   }
 }
+
+/**
+ * Zod schema to validate create staff request
+ */
+const createStaffSchema = z.object({
+  name: z.string().min(1, "Name is required").max(100),
+  email: z.string().email("Invalid email address").max(150),
+  phone: z.string().max(20).optional().nullable(),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  role: z.enum(["manager", "receptionist", "warehouse"]),
+});
+
+/**
+ * Zod schema to validate update staff request
+ */
+const updateStaffSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  email: z.string().email().max(150).optional(),
+  phone: z.string().max(20).optional().nullable(),
+  password: z.string().min(6).optional(),
+  role: z.enum(["manager", "receptionist", "warehouse"]).optional(),
+  isActive: z.boolean().optional(),
+});
+
+/**
+ * GET /api/auth/staff
+ * Get list of all staff members (manager only)
+ */
+export async function getStaffList(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const staffList = await prisma.staff.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: [
+        { role: "asc" },
+        { name: "asc" },
+      ],
+    });
+
+    res.status(200).json({
+      success: true,
+      data: staffList,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * POST /api/auth/staff
+ * Create a new staff member (manager only)
+ */
+export async function createStaff(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const body = createStaffSchema.parse(req.body);
+
+    // Check if staff email already exists
+    const existingStaff = await prisma.staff.findUnique({
+      where: { email: body.email },
+    });
+
+    if (existingStaff) {
+      res.status(409).json({
+        success: false,
+        error: "Staff email already registered",
+        code: "STAFF_EXISTS",
+      });
+      return;
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(body.password, 10);
+
+    // Create staff
+    const newStaff = await prisma.staff.create({
+      data: {
+        name: body.name,
+        email: body.email,
+        phone: body.phone || null,
+        password: hashedPassword,
+        role: body.role,
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      data: newStaff,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({
+        success: false,
+        error: error.errors[0].message,
+        code: "VALIDATION_ERROR",
+        details: error.errors,
+      });
+      return;
+    }
+    next(error);
+  }
+}
+
+/**
+ * PATCH /api/auth/staff/:id
+ * Update a staff member details or deactivate them (manager only)
+ */
+export async function updateStaff(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const { id } = req.params;
+    const staffId = parseInt(id, 10);
+
+    if (isNaN(staffId) || staffId <= 0) {
+      res.status(400).json({
+        success: false,
+        error: "Invalid staff ID",
+        code: "INVALID_ID",
+      });
+      return;
+    }
+
+    const body = updateStaffSchema.parse(req.body);
+
+    // Verify staff exists
+    const existingStaff = await prisma.staff.findUnique({
+      where: { id: staffId },
+    });
+
+    if (!existingStaff) {
+      res.status(404).json({
+        success: false,
+        error: "Staff member not found",
+        code: "NOT_FOUND",
+      });
+      return;
+    }
+
+    // Prepare update data
+    const updateData: any = {};
+    if (body.name !== undefined) updateData.name = body.name;
+    if (body.email !== undefined) {
+      // Check if email taken by someone else
+      if (body.email !== existingStaff.email) {
+        const emailTaken = await prisma.staff.findUnique({
+          where: { email: body.email },
+        });
+        if (emailTaken) {
+          res.status(409).json({
+            success: false,
+            error: "Email already taken by another staff member",
+            code: "EMAIL_TAKEN",
+          });
+          return;
+        }
+      }
+      updateData.email = body.email;
+    }
+    if (body.phone !== undefined) updateData.phone = body.phone;
+    if (body.role !== undefined) updateData.role = body.role;
+    if (body.isActive !== undefined) updateData.isActive = body.isActive;
+
+    // Hash password if updating password
+    if (body.password) {
+      updateData.password = await bcrypt.hash(body.password, 10);
+    }
+
+    // Update staff
+    const updatedStaff = await prisma.staff.update({
+      where: { id: staffId },
+      data: updateData,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      data: updatedStaff,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({
+        success: false,
+        error: error.errors[0].message,
+        code: "VALIDATION_ERROR",
+        details: error.errors,
+      });
+      return;
+    }
+    next(error);
+  }
+}
+

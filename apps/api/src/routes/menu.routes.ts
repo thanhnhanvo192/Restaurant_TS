@@ -181,6 +181,16 @@ router.delete(
 );
 
 /**
+ * GET /api/menu/items
+ * Get all menu items (staff only)
+ */
+router.get(
+  "/items",
+  verifyStaffToken,
+  menuController.getMenuItems,
+);
+
+/**
  * POST /api/menu/items
  * Create menu item with optional image upload (manager only)
  * Accepts multipart/form-data

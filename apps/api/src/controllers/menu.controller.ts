@@ -569,5 +569,34 @@ export async function toggleItemStatus(
   }
 }
 
+/**
+ * GET /api/menu/items
+ * Get all menu items with category details (staff only)
+ */
+export async function getMenuItems(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const items = await prisma.menuItem.findMany({
+      include: {
+        category: true,
+      },
+      orderBy: [
+        { categoryId: "asc" },
+        { sortOrder: "asc" },
+      ],
+    });
+
+    res.json({
+      success: true,
+      data: items,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 // Import Decimal for proper price handling
 import { Decimal } from "@prisma/client/runtime/library";

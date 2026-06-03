@@ -440,6 +440,10 @@ export async function payByCash(
         amount: result.total,
         paidAt: result.paidAt,
       });
+      socketService.emitToReceptionists("table-status-changed", {
+        tableId: table.id,
+        status: "cleaning",
+      });
     } catch (socketError) {
       console.error("Socket.IO emit error:", socketError);
       // Socket error không block response

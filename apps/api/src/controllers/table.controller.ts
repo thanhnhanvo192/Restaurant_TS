@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import QRCode from "qrcode";
 import { PrismaClient, TableStatus } from "@prisma/client";
+import { getSocketService } from "../socket";
 
 const prisma = new PrismaClient();
 
@@ -242,6 +243,16 @@ export async function updateTable(
         status: body.status as TableStatus | undefined,
       },
     });
+
+    try {
+      const socketService = getSocketService();
+      socketService.emitToReceptionists("table-status-changed", {
+        tableId: table.id,
+        status: table.status,
+      });
+    } catch (socketError) {
+      console.error("[Socket] Failed to emit table-status-changed in updateTable:", socketError);
+    }
 
     res.status(200).json({
       success: true,
