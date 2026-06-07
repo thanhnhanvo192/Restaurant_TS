@@ -10,7 +10,7 @@ interface DecodedUser {
   iat?: number;
 }
 
-// Custom JWT decode safe for Next.js Edge runtime
+// Custom JWT decode safe for Next.js Edge runtime / Node runtime proxy
 function decodeJwt(token: string): DecodedUser | null {
   try {
     const parts = token.split(".");
@@ -43,7 +43,7 @@ function getRoleHomePath(role: string): string {
   }
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get("token")?.value;
 
@@ -64,47 +64,56 @@ export function middleware(request: NextRequest) {
   }
 
   // 2. Protect routes
-  if (!token) {
-    // If not authenticated, redirect to /login
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
+  const isCustomerRoute = pathname.startsWith("/customer");
+  const isManagerRoute = pathname.startsWith("/manager");
+  const isReceptionistRoute = pathname.startsWith("/receptionist");
+  const isWarehouseRoute = pathname.startsWith("/warehouse");
 
-  const user = decodeJwt(token);
+  const isProtectedRoute = isCustomerRoute || isManagerRoute || isReceptionistRoute || isWarehouseRoute;
 
-  if (!user || !user.role) {
-    // Clean up corrupted cookie
-    const response = NextResponse.redirect(new URL("/login", request.url));
-    response.cookies.delete("token");
-    return response;
-  }
+  if (isProtectedRoute) {
+    const loginRedirectUrl = isCustomerRoute ? "/customer/login" : "/staff/login";
 
-  // Check expiration
-  if (user.exp) {
-    const currentTime = Math.floor(Date.now() / 1000);
-    if (user.exp < currentTime) {
-      const response = NextResponse.redirect(new URL("/login", request.url));
+    if (!token) {
+      return NextResponse.redirect(new URL(loginRedirectUrl, request.url));
+    }
+
+    const user = decodeJwt(token);
+
+    if (!user || !user.role) {
+      const response = NextResponse.redirect(new URL(loginRedirectUrl, request.url));
       response.cookies.delete("token");
       return response;
     }
-  }
 
-  const role = user.role;
+    // Check expiration
+    if (user.exp) {
+      const currentTime = Math.floor(Date.now() / 1000);
+      if (user.exp < currentTime) {
+        const response = NextResponse.redirect(new URL(loginRedirectUrl, request.url));
+        response.cookies.delete("token");
+        return response;
+      }
+    }
 
-  // Role-based route enforcement
-  if (pathname.startsWith("/manager") && role !== "manager") {
-    return NextResponse.redirect(new URL(getRoleHomePath(role), request.url));
-  }
+    const role = user.role;
 
-  if (pathname.startsWith("/receptionist") && role !== "receptionist") {
-    return NextResponse.redirect(new URL(getRoleHomePath(role), request.url));
-  }
+    // Role-based route enforcement
+    if (isManagerRoute && role !== "manager") {
+      return NextResponse.redirect(new URL(getRoleHomePath(role), request.url));
+    }
 
-  if (pathname.startsWith("/warehouse") && role !== "warehouse") {
-    return NextResponse.redirect(new URL(getRoleHomePath(role), request.url));
-  }
+    if (isReceptionistRoute && role !== "receptionist") {
+      return NextResponse.redirect(new URL(getRoleHomePath(role), request.url));
+    }
 
-  if (pathname.startsWith("/customer") && role !== "customer") {
-    return NextResponse.redirect(new URL(getRoleHomePath(role), request.url));
+    if (isWarehouseRoute && role !== "warehouse") {
+      return NextResponse.redirect(new URL(getRoleHomePath(role), request.url));
+    }
+
+    if (isCustomerRoute && role !== "customer") {
+      return NextResponse.redirect(new URL(getRoleHomePath(role), request.url));
+    }
   }
 
   return NextResponse.next();
