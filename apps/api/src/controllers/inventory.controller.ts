@@ -59,6 +59,15 @@ const adjustStockSchema = z.object({
   note: z.string().optional(),
 });
 
+const removeStockSchema = z.object({
+  quantity: z
+    .number()
+    .positive("quantity must be > 0")
+    .or(z.string().transform((val) => parseFloat(val)))
+    .refine((val) => val > 0, "quantity must be > 0"),
+  note: z.string().optional(),
+});
+
 const getTransactionsSchema = z.object({
   item_id: z
     .string()
@@ -375,6 +384,113 @@ export async function addStock(
           qtyAfter: qtyAfter,
           supplier: body.supplier || null,
           unitCost: body.unit_cost ? new Decimal(body.unit_cost) : null,
+          note: body.note || null,
+          createdById: req.user!.id,
+        },
+      });
+
+      return { item: updatedItem, transaction: txRecord };
+    });
+
+    res.status(201).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({
+        success: false,
+        error: error.errors[0].message,
+        code: "VALIDATION_ERROR",
+      });
+      return;
+    }
+    next(error);
+  }
+}
+
+/**
+ * POST /api/inventory/:id/remove-stock
+ * Remove stock from inventory with transaction
+ * warehouse/manager only
+ */
+export async function removeStock(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    if (!hasWarehouseAccess(req.user?.role)) {
+      res.status(403).json({
+        success: false,
+        error: "Access denied. Warehouse or manager role required.",
+        code: "FORBIDDEN",
+      });
+      return;
+    }
+
+    const { id } = req.params;
+    const itemId = parseInt(id, 10);
+
+    if (!itemId || itemId <= 0) {
+      res.status(400).json({
+        success: false,
+        error: "Invalid item ID",
+        code: "INVALID_ID",
+      });
+      return;
+    }
+
+    const body = removeStockSchema.parse(req.body);
+
+    // Get current item
+    const item = await prisma.inventoryItem.findUnique({
+      where: { id: itemId },
+    });
+
+    if (!item) {
+      res.status(404).json({
+        success: false,
+        error: "Inventory item not found",
+        code: "NOT_FOUND",
+      });
+      return;
+    }
+
+    const qtyBefore = item.currentQty;
+    const quantityToRemove = new Decimal(body.quantity);
+
+    if (qtyBefore.lessThan(quantityToRemove)) {
+      res.status(400).json({
+        success: false,
+        error: "Số lượng tồn kho không đủ để xuất.",
+        code: "INSUFFICIENT_STOCK",
+      });
+      return;
+    }
+
+    const qtyAfter = qtyBefore.sub(quantityToRemove);
+
+    // Use Prisma transaction to ensure consistency
+    const result = await prisma.$transaction(async (tx) => {
+      // Update inventory item
+      const updatedItem = await tx.inventoryItem.update({
+        where: { id: itemId },
+        data: {
+          currentQty: qtyAfter,
+        },
+      });
+
+      // Create transaction record
+      const txRecord = await tx.inventoryTransaction.create({
+        data: {
+          itemId: itemId,
+          type: "out",
+          quantity: quantityToRemove,
+          qtyBefore: qtyBefore,
+          qtyAfter: qtyAfter,
+          supplier: null,
+          unitCost: null,
           note: body.note || null,
           createdById: req.user!.id,
         },

@@ -523,6 +523,25 @@ export async function confirmReservation(
       },
     });
 
+    console.log(
+      `[Reservation] ✅ Confirmed reservation #${updated.id} by staff #${req.user.id}`,
+    );
+
+    // Emit Socket.IO event to staff receptionist room
+    try {
+      io.to("staff:receptionist").emit("reservation-confirmed", {
+        reservationId: updated.id,
+        tableId: updated.tableId,
+        tableNumber: updated.table?.tableNumber || "",
+        status: updated.status,
+      });
+      console.log(
+        `[Socket.IO] ✅ Emitted reservation-confirmed event for reservation #${updated.id}`,
+      );
+    } catch (socketError) {
+      console.error(`[Socket.IO] ❌ Failed to emit reservation-confirmed:`, socketError);
+    }
+
     res.status(200).json({
       success: true,
       data: updated,
@@ -635,6 +654,25 @@ export async function cancelReservation(
         },
       },
     });
+
+    console.log(
+      `[Reservation] ❌ Cancelled reservation #${updated.id}`,
+    );
+
+    // Emit Socket.IO event to staff receptionist room
+    try {
+      io.to("staff:receptionist").emit("reservation-cancelled", {
+        reservationId: updated.id,
+        tableId: updated.tableId,
+        tableNumber: updated.table?.tableNumber || "",
+        status: updated.status,
+      });
+      console.log(
+        `[Socket.IO] ✅ Emitted reservation-cancelled event for reservation #${updated.id}`,
+      );
+    } catch (socketError) {
+      console.error(`[Socket.IO] ❌ Failed to emit reservation-cancelled:`, socketError);
+    }
 
     res.status(200).json({
       success: true,

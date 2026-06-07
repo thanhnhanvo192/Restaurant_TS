@@ -21,7 +21,8 @@ import {
   Utensils,
   Users,
   Boxes,
-  TrendingUp
+  TrendingUp,
+  Calendar
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -69,6 +70,77 @@ export default function StaffLayout({
     };
   }, [router]);
 
+  // Listen to real-time events for receptionist
+  useEffect(() => {
+    if (!staffUser) return;
+
+    const socket = getSocket();
+    if (socket && (staffUser.role === "receptionist" || staffUser.role === "manager")) {
+      console.log("[Socket] Subscribing to global staff events inside Staff Layout");
+
+      const handleNewReservation = (data: {
+        reservationId: number;
+        userName: string;
+        tableNumber: string;
+        date: string;
+        time: string;
+        guestCount: number;
+      }) => {
+        console.log("[Socket] Global new reservation event received:", data);
+
+        // Format Date
+        const dateObj = new Date(data.date);
+        const formattedDate = dateObj.toLocaleDateString("vi-VN", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        });
+
+        // Format Time
+        let formattedTime = data.time;
+        if (formattedTime.includes("T")) {
+          const parts = formattedTime.split("T");
+          formattedTime = parts[1].substring(0, 5);
+        } else {
+          formattedTime = formattedTime.substring(0, 5);
+        }
+
+        toast.info(
+          <div className="flex flex-col gap-1.5 p-0.5">
+            <span className="font-extrabold text-white text-xs flex items-center gap-1.5">
+              <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+              🔔 ĐẶT BÀN MỚI CHỜ XỬ LÝ!
+            </span>
+            <span className="text-[11px] text-zinc-300">
+              Khách hàng: <strong className="text-white">{data.userName || "Khách Vãng Lai"}</strong>
+            </span>
+            <span className="text-[11px] text-zinc-400">
+              Bàn: <strong className="text-white">{data.tableNumber}</strong> • Khách: <strong className="text-white">{data.guestCount}</strong> • {formattedDate} lúc {formattedTime}
+            </span>
+            <button
+              onClick={() => {
+                router.push("/receptionist/reservations");
+                toast.dismiss();
+              }}
+              className="mt-1 self-start px-2.5 py-1 text-[10px] font-extrabold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-zinc-950 rounded-lg cursor-pointer transition-colors shadow-sm animate-pulse"
+            >
+              Xem danh sách
+            </button>
+          </div>,
+          {
+            duration: 8000,
+          }
+        );
+      };
+
+      socket.on("new-reservation", handleNewReservation);
+
+      return () => {
+        socket.off("new-reservation", handleNewReservation);
+      };
+    }
+  }, [staffUser, router]);
+
   const handleLogout = () => {
     removeToken();
     localStorage.removeItem("user");
@@ -97,6 +169,11 @@ export default function StaffLayout({
           name: "Sơ đồ bàn",
           href: "/receptionist/tables",
           icon: LayoutGrid,
+        },
+        {
+          name: "Đặt bàn",
+          href: "/receptionist/reservations",
+          icon: Calendar,
         },
         {
           name: "Orders",
@@ -248,6 +325,7 @@ export default function StaffLayout({
             <div className="hidden md:flex items-center gap-2.5">
               <h2 className="text-base font-bold text-white uppercase tracking-wider">
                 {pathname.includes("tables") && "Sơ đồ bàn ăn"}
+                {pathname.includes("reservations") && "Quản lý đặt bàn"}
                 {pathname.includes("orders") && "Hệ thống quản lý Orders"}
                 {pathname.includes("invoices") && "Hóa đơn & Thanh toán"}
                 {pathname.includes("dashboard") && "Dashboard Quản Lý"}

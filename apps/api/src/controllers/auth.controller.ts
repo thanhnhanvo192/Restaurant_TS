@@ -411,7 +411,7 @@ const updateStaffSchema = z.object({
  * Get list of all staff members (manager only)
  */
 export async function getStaffList(
-  req: Request,
+  _req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {

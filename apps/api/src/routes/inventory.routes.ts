@@ -67,6 +67,19 @@ router.post(
 );
 
 /**
+ * POST /api/inventory/:id/remove-stock
+ * Remove stock from inventory (creates transaction record)
+ * warehouse/manager only
+ */
+router.post(
+  "/:id/remove-stock",
+  verifyStaffToken,
+  requireRole(["warehouse", "manager"]),
+  inventoryController.removeStock,
+);
+
+
+/**
  * POST /api/inventory/:id/adjust
  * Adjust stock to exact quantity (manager only)
  * Creates adjustment transaction record

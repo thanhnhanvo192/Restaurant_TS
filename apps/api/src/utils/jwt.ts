@@ -61,10 +61,15 @@ export async function verifyToken(token: string): Promise<StaffTokenPayload> {
       throw new Error("Invalid token payload");
     }
 
+    const role = (decoded as any).role;
+    if (role === "customer") {
+      throw new Error("Invalid staff token: role is customer");
+    }
+
     const payload: StaffTokenPayload = {
       id: decoded.id as number,
       email: decoded.email as string,
-      role: decoded.role as StaffTokenPayload["role"],
+      role: role as StaffTokenPayload["role"],
     };
 
     return payload;
@@ -121,6 +126,11 @@ export async function verifyUserToken(
     // Type guard: ensure decoded là object với đúng structure
     if (typeof decoded !== "object" || decoded === null) {
       throw new Error("Invalid token payload");
+    }
+
+    const role = (decoded as any).role;
+    if (role !== "customer") {
+      throw new Error("Invalid customer token: role is not customer");
     }
 
     const payload: UserTokenPayload = {
