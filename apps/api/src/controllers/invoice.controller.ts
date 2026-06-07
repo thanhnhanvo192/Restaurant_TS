@@ -127,7 +127,7 @@ export async function createInvoice(
     const total = subtotal - discountAmount;
 
     // Tạo invoice + payment record trong transaction
-    const invoice = await prisma.$transaction(async (tx) => {
+    const invoice = await prisma.$transaction(async (tx: any) => {
       // Tạo invoice
       const newInvoice = await tx.invoice.create({
         data: {
@@ -380,7 +380,7 @@ export async function payByCash(
     }
 
     // Transaction: payment + invoice + session + table
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // 1. Tạo payment record
       await tx.payment.create({
         data: {

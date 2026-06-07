@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
-import { PrismaClient, TableStatus, TableSessionStatus } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { getSocketService } from "../socket";
 
 const prisma = new PrismaClient();
@@ -173,15 +173,15 @@ export async function openSession(
     }
 
     // Handle different table statuses
-    if (table.status === TableStatus.available) {
+    if (table.status === "available") {
       // Create new session and update table status in transaction
-      const result = await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async (tx: any) => {
         // Create new session
         const session = await tx.tableSession.create({
           data: {
             tableId: id,
             reservationId: reservationId || null,
-            status: TableSessionStatus.open,
+            status: "open",
           },
           include: {
             orders: true,
@@ -192,7 +192,7 @@ export async function openSession(
         // Update table status to occupied
         await tx.table.update({
           where: { id },
-          data: { status: TableStatus.occupied },
+          data: { status: "occupied" },
         });
 
         return session;
@@ -213,7 +213,7 @@ export async function openSession(
       } catch (socketError) {
         console.error("[Socket] Failed to emit table-status-changed in openSession:", socketError);
       }
-    } else if (table.status === TableStatus.occupied) {
+    } else if (table.status === "occupied") {
       // Table is already occupied, return existing session
       if (table.tableSessions.length === 0) {
         res.status(400).json({
@@ -245,11 +245,11 @@ export async function openSession(
       });
     } else {
       // Table status is 'reserved' or 'cleaning'
-      const statusMessages: Record<TableStatus, string> = {
-        [TableStatus.available]: "Table is available",
-        [TableStatus.reserved]: "Table is reserved for a future booking",
-        [TableStatus.occupied]: "Table is occupied",
-        [TableStatus.cleaning]: "Table is being cleaned",
+      const statusMessages: Record<string, string> = {
+        available: "Table is available",
+        reserved: "Table is reserved for a future booking",
+        occupied: "Table is occupied",
+        cleaning: "Table is being cleaned",
       };
 
       res.status(400).json({
@@ -311,7 +311,7 @@ export async function closeSession(
       return;
     }
 
-    if (session.status === TableSessionStatus.closed) {
+    if (session.status === "closed") {
       res.status(400).json({
         success: false,
         error: "Session is already closed",
@@ -321,12 +321,12 @@ export async function closeSession(
     }
 
     // Close session and update table status in transaction
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // Update session status to closed
       const updatedSession = await tx.tableSession.update({
         where: { id: sessionId },
         data: {
-          status: TableSessionStatus.closed,
+          status: "closed",
           closedAt: new Date(),
         },
         include: {
@@ -338,7 +338,7 @@ export async function closeSession(
       // Update table status to cleaning
       await tx.table.update({
         where: { id: session.tableId },
-        data: { status: TableStatus.cleaning },
+        data: { status: "cleaning" },
       });
 
       return updatedSession;

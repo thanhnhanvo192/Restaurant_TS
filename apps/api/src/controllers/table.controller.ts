@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import QRCode from "qrcode";
-import { PrismaClient, TableStatus } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { getSocketService } from "../socket";
 
 const prisma = new PrismaClient();
@@ -240,7 +240,7 @@ export async function updateTable(
         capacity: body.capacity,
         location: body.location,
         notes: body.notes,
-        status: body.status as TableStatus | undefined,
+        status: body.status as any,
       },
     });
 

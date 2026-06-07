@@ -365,7 +365,7 @@ export async function addStock(
     const qtyAfter = qtyBefore.add(quantityToAdd);
 
     // Use Prisma transaction to ensure consistency
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // Update inventory item
       const updatedItem = await tx.inventoryItem.update({
         where: { id: itemId },
@@ -472,7 +472,7 @@ export async function removeStock(
     const qtyAfter = qtyBefore.sub(quantityToRemove);
 
     // Use Prisma transaction to ensure consistency
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // Update inventory item
       const updatedItem = await tx.inventoryItem.update({
         where: { id: itemId },
@@ -568,7 +568,7 @@ export async function adjustStock(
     const newQty = new Decimal(body.new_qty);
 
     // Use Prisma transaction
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // Update inventory item
       const updatedItem = await tx.inventoryItem.update({
         where: { id: itemId },

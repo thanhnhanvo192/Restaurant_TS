@@ -87,7 +87,7 @@ export async function createOrder(
     }
 
     // Validate menu items exist and are available
-    const menuItemIds = body.items.map((item) => item.menuItemId);
+    const menuItemIds = body.items.map((item: any) => item.menuItemId);
     const menuItems = await prisma.menuItem.findMany({
       where: {
         id: { in: menuItemIds },
@@ -105,12 +105,12 @@ export async function createOrder(
 
     // Verify all items are available
     const unavailableItems = menuItems.filter(
-      (item) => item.status !== "available",
+      (item: any) => item.status !== "available",
     );
     if (unavailableItems.length > 0) {
       res.status(400).json({
         success: false,
-        error: `Items not available: ${unavailableItems.map((i) => i.name).join(", ")}`,
+        error: `Items not available: ${unavailableItems.map((i: any) => i.name).join(", ")}`,
         code: "ITEMS_UNAVAILABLE",
       });
       return;
@@ -123,9 +123,9 @@ export async function createOrder(
         status: "pending",
         note: body.note || null,
         orderItems: {
-          create: body.items.map((item) => {
+          create: body.items.map((item: any) => {
             // Find unit price từ menu items
-            const menuItem = menuItems.find((m) => m.id === item.menuItemId);
+            const menuItem = menuItems.find((m: any) => m.id === item.menuItemId);
             return {
               menuItemId: item.menuItemId,
               quantity: item.quantity,
@@ -154,7 +154,7 @@ export async function createOrder(
         tableId: order.session.tableId,
         itemCount: order.orderItems.length,
         totalPrice: order.orderItems.reduce(
-          (sum, item) => sum + Number(item.unitPrice) * item.quantity,
+          (sum: number, item: any) => sum + Number(item.unitPrice) * item.quantity,
           0,
         ),
         createdAt: order.createdAt,
@@ -170,7 +170,7 @@ export async function createOrder(
         id: order.id,
         sessionId: order.sessionId,
         status: order.status,
-        items: order.orderItems.map((item) => ({
+        items: order.orderItems.map((item: any) => ({
           id: item.id,
           menuItemId: item.menuItemId,
           name: item.menuItem.name,
@@ -246,11 +246,11 @@ export async function getSessionOrders(
 
     res.json({
       success: true,
-      data: orders.map((order) => ({
+      data: orders.map((order: any) => ({
         id: order.id,
         sessionId: order.sessionId,
         status: order.status,
-        items: order.orderItems.map((item) => ({
+        items: order.orderItems.map((item: any) => ({
           id: item.id,
           menuItemId: item.menuItemId,
           name: item.menuItem.name,
@@ -341,7 +341,7 @@ export async function confirmOrder(
         orderId: updatedOrder.id,
         sessionId: updatedOrder.sessionId,
         tableId: updatedOrder.session.tableId,
-        items: updatedOrder.orderItems.map((item) => ({
+        items: updatedOrder.orderItems.map((item: any) => ({
           name: item.menuItem.name,
           quantity: item.quantity,
           note: item.note,
@@ -373,7 +373,7 @@ export async function confirmOrder(
         id: updatedOrder.id,
         sessionId: updatedOrder.sessionId,
         status: updatedOrder.status,
-        items: updatedOrder.orderItems.map((item) => ({
+        items: updatedOrder.orderItems.map((item: any) => ({
           id: item.id,
           name: item.menuItem.name,
           quantity: item.quantity,
@@ -465,7 +465,7 @@ export async function completeOrder(
         {
           orderId: updatedOrder.id,
           status: "served",
-          items: updatedOrder.orderItems.map((item) => ({
+          items: updatedOrder.orderItems.map((item: any) => ({
             name: item.menuItem.name,
             quantity: item.quantity,
           })),
@@ -482,7 +482,7 @@ export async function completeOrder(
         id: updatedOrder.id,
         sessionId: updatedOrder.sessionId,
         status: updatedOrder.status,
-        items: updatedOrder.orderItems.map((item) => ({
+        items: updatedOrder.orderItems.map((item: any) => ({
           id: item.id,
           name: item.menuItem.name,
           quantity: item.quantity,
