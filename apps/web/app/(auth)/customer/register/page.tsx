@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -46,8 +46,10 @@ const registerSchema = z
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
-export default function CustomerRegisterPage() {
+function CustomerRegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") || "/customer/reservations";
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -91,8 +93,8 @@ export default function CustomerRegisterPage() {
           role: "customer",
         }));
 
-        // Redirect to customer menu page
-        router.push("/customer/menu");
+        // Redirect to target or reservations
+        router.push(redirect);
       } else {
         setErrorMsg("Đăng ký thất bại. Vui lòng thử lại.");
       }
@@ -275,12 +277,24 @@ export default function CustomerRegisterPage() {
       <CardFooter className="flex justify-center border-t border-zinc-800/50 bg-zinc-950/20 py-3 text-xs text-zinc-400">
         Đã có tài khoản?{" "}
         <Link
-          href="/customer/login"
+          href={redirect !== "/customer/reservations" ? `/customer/login?redirect=${encodeURIComponent(redirect)}` : "/customer/login"}
           className="text-amber-500 hover:text-amber-400 ml-1 font-medium underline-offset-4 hover:underline transition-colors"
         >
           Đăng nhập ngay
         </Link>
       </CardFooter>
     </Card>
+  );
+}
+
+export default function CustomerRegisterPage() {
+  return (
+    <Suspense fallback={
+      <Card className="border-zinc-800 bg-zinc-900/60 backdrop-blur-xl text-zinc-100 shadow-2xl relative overflow-hidden flex items-center justify-center p-12 min-h-[500px]">
+        <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+      </Card>
+    }>
+      <CustomerRegisterForm />
+    </Suspense>
   );
 }

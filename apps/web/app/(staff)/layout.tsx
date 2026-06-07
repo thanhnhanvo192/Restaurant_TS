@@ -20,7 +20,8 @@ import {
   LayoutDashboard,
   Utensils,
   Users,
-  Boxes
+  Boxes,
+  TrendingUp
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -124,6 +125,11 @@ export default function StaffLayout({
           icon: LayoutDashboard,
         },
         {
+          name: "Bàn ăn",
+          href: "/manager/tables",
+          icon: LayoutGrid,
+        },
+        {
           name: "Menu",
           href: "/manager/menu",
           icon: Utensils,
@@ -135,8 +141,8 @@ export default function StaffLayout({
         },
         {
           name: "Thống kê",
-          href: "/manager/dashboard", // Stats maps to Dashboard view
-          icon: LayoutDashboard,
+          href: "/manager/statistics",
+          icon: TrendingUp,
         },
       ];
     }
@@ -175,7 +181,7 @@ export default function StaffLayout({
               const Icon = item.icon;
               return (
                 <Link
-                  key={item.href}
+                  key={item.name}
                   href={item.href}
                   className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer ${
                     isActive
@@ -278,7 +284,7 @@ export default function StaffLayout({
                   const Icon = item.icon;
                   return (
                     <Link
-                      key={item.href}
+                      key={item.name}
                       href={item.href}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold cursor-pointer ${

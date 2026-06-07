@@ -46,7 +46,11 @@ export function getUser(): DecodedUser | null {
         .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
         .join('')
     );
-    return JSON.parse(jsonPayload) as DecodedUser;
+    const decoded = JSON.parse(jsonPayload) as DecodedUser;
+    if (decoded && !decoded.role) {
+      decoded.role = 'customer';
+    }
+    return decoded;
   } catch (error) {
     return null;
   }

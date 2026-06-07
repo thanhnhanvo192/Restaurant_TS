@@ -312,7 +312,7 @@ export async function getTopItems(
     }
 
     const response: TopItemResponse[] = topItems.map((item) => ({
-      menu_item_id: item.menu_item_id,
+      menu_item_id: Number(item.menu_item_id),
       name: item.name,
       category: item.category,
       total_quantity: parseInt(item.total_quantity.toString(), 10),

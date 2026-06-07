@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import { isAuthenticated, getUser } from "@/lib/auth";
+import { isAuthenticated, getUser, removeToken } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -78,7 +78,7 @@ export default function ReservationsPage() {
     
     if (!isAuthenticated()) {
       toast.error("Vui lòng đăng nhập để tiếp tục.");
-      router.push("/customer/login");
+      router.push("/customer/login?redirect=/customer/reservations");
       return;
     }
 
@@ -87,7 +87,7 @@ export default function ReservationsPage() {
       setCustomerName(customer.name || customer.email || "Khách Hàng");
     } else {
       toast.error("Tài khoản không hợp lệ.");
-      router.push("/customer/login");
+      router.push("/customer/login?redirect=/customer/reservations");
       return;
     }
 
@@ -118,8 +118,7 @@ export default function ReservationsPage() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    removeToken();
     toast.success("Đã đăng xuất tài khoản.");
     router.push("/customer/login");
   };

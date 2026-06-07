@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -202,12 +203,12 @@ export function TableLandingClient({ tableId, table, session }: TableLandingClie
             </Button>
           )}
 
-          <a
-            href="/customer/login"
+          <Link
+            href={`/customer/login?redirect=/table/${tableId}`}
             className="text-xs text-zinc-500 hover:text-amber-500 transition-colors mt-3 underline underline-offset-4"
           >
             Đăng nhập tài khoản khách hàng
-          </a>
+          </Link>
         </CardFooter>
       </Card>
     </div>

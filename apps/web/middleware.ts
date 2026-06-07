@@ -18,7 +18,11 @@ function decodeJwt(token: string): DecodedUser | null {
     const base64Url = parts[1];
     const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
     const jsonPayload = atob(base64);
-    return JSON.parse(jsonPayload) as DecodedUser;
+    const decoded = JSON.parse(jsonPayload) as DecodedUser;
+    if (decoded && !decoded.role) {
+      decoded.role = "customer";
+    }
+    return decoded;
   } catch (error) {
     return null;
   }

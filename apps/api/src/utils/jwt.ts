@@ -91,7 +91,7 @@ export async function signUserToken(user: UserTokenPayload): Promise<string> {
     throw new Error("JWT_SECRET environment variable is not set");
   }
 
-  const token = jwt.sign(user, secret, {
+  const token = jwt.sign({ ...user, role: "customer" }, secret, {
     expiresIn: "30d",
     algorithm: "HS256",
   });

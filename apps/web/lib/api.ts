@@ -32,8 +32,10 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
-        // Prevent infinite loop if already on login page
-        if (!window.location.pathname.startsWith('/login')) {
+        // Prevent redirect loop if already on a login/register page
+        const pathname = window.location.pathname;
+        const isAuthRoute = pathname.includes('/login') || pathname.includes('/register');
+        if (!isAuthRoute) {
           window.location.href = '/login';
         }
       }
