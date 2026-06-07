@@ -574,7 +574,7 @@ export async function toggleItemStatus(
  * Get all menu items with category details (staff only)
  */
 export async function getMenuItems(
-  req: Request,
+  _req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {

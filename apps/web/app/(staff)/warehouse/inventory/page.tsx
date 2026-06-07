@@ -20,6 +20,7 @@ import {
   Search, 
   AlertTriangle, 
   ArrowDownToLine, 
+  ArrowUpFromLine,
   Package, 
   Boxes, 
   Clipboard, 
@@ -43,6 +44,12 @@ export default function WarehouseInventoryPage() {
   const [restockSupplier, setRestockSupplier] = useState("");
   const [restockPrice, setRestockPrice] = useState("");
   const [restockNote, setRestockNote] = useState("");
+
+  // Export Dialog State
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isSubmittingExport, setIsSubmittingExport] = useState(false);
+  const [exportQty, setExportQty] = useState("");
+  const [exportNote, setExportNote] = useState("");
 
   // Create Ingredient Dialog State
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -77,6 +84,52 @@ export default function WarehouseInventoryPage() {
     setRestockPrice("");
     setRestockNote("");
     setIsRestockOpen(true);
+  };
+
+  const handleOpenExport = (item: InventoryItem) => {
+    setSelectedItem(item);
+    setExportQty("");
+    setExportNote("");
+    setIsExportOpen(true);
+  };
+
+  const handleExportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedItem) return;
+
+    const qty = parseFloat(exportQty);
+    if (isNaN(qty) || qty <= 0) {
+      toast.error("Số lượng xuất kho phải lớn hơn 0.");
+      return;
+    }
+
+    const currentQtyNum = Number(selectedItem.currentQty);
+    if (qty > currentQtyNum) {
+      toast.error(`Số lượng xuất kho (${qty}) vượt quá lượng tồn kho hiện tại (${currentQtyNum} ${selectedItem.unit}).`);
+      return;
+    }
+
+    setIsSubmittingExport(true);
+    try {
+      const payload: any = {
+        quantity: qty,
+      };
+      if (exportNote.trim()) payload.note = exportNote;
+
+      const res = await api.post(`/api/inventory/${selectedItem.id}/remove-stock`, payload);
+      
+      // Update item in local state
+      const updatedItem = res.data.data.item;
+      setItems(items.map((i) => (i.id === selectedItem.id ? updatedItem : i)));
+      
+      toast.success(`Đã xuất kho ${qty} ${selectedItem.unit} từ ${selectedItem.name}!`);
+      setIsExportOpen(false);
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error.response?.data?.error || "Lỗi xuất kho.");
+    } finally {
+      setIsSubmittingExport(false);
+    }
   };
 
   const handleRestockSubmit = async (e: React.FormEvent) => {
@@ -339,14 +392,24 @@ export default function WarehouseInventoryPage() {
                           )}
                         </td>
                         <td className="p-4 pr-6 text-right">
-                          <Button
-                            size="sm"
-                            onClick={() => handleOpenRestock(item)}
-                            className="bg-zinc-850 hover:bg-amber-500 hover:text-zinc-950 text-zinc-300 font-bold text-xs h-8 px-2.5 rounded-lg border border-zinc-750 transition cursor-pointer"
-                          >
-                            <ArrowDownToLine className="w-3.5 h-3.5 mr-1" />
-                            Nhập kho
-                          </Button>
+                          <div className="flex gap-2 justify-end">
+                            <Button
+                              size="sm"
+                              onClick={() => handleOpenRestock(item)}
+                              className="bg-zinc-850 hover:bg-amber-500 hover:text-zinc-950 text-zinc-300 font-bold text-xs h-8 px-2.5 rounded-lg border border-zinc-750 transition cursor-pointer"
+                            >
+                              <ArrowDownToLine className="w-3.5 h-3.5 mr-1" />
+                              Nhập kho
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => handleOpenExport(item)}
+                              className="bg-zinc-850 hover:bg-red-500 hover:text-zinc-950 text-zinc-300 font-bold text-xs h-8 px-2.5 rounded-lg border border-zinc-750 transition cursor-pointer"
+                            >
+                              <ArrowUpFromLine className="w-3.5 h-3.5 mr-1" />
+                              Xuất kho
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -457,11 +520,88 @@ export default function WarehouseInventoryPage() {
                 )}
               </Button>
             </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+            </form>
+          </DialogContent>
+        </Dialog>
 
-      {/* Create New Item Dialog (Thêm nguyên liệu mới) */}
+        {/* Export Dialog (Xuất kho) */}
+        <Dialog open={isExportOpen} onOpenChange={setIsExportOpen}>
+          <DialogContent className="border-zinc-800 bg-zinc-900 text-zinc-100 max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="text-base font-bold text-white font-heading flex items-center gap-2">
+                <Boxes className="w-5 h-5 text-red-500" />
+                <span>Xuất kho: {selectedItem?.name}</span>
+              </DialogTitle>
+              <DialogDescription className="text-xs text-zinc-400">
+                Nhập số lượng xuất và lý do xuất kho (chế biến món ăn, hao hụt, hỏng...).
+              </DialogDescription>
+            </DialogHeader>
+
+            <form onSubmit={handleExportSubmit} className="space-y-4 pt-2">
+              {/* Quantity & Unit */}
+              <div className="space-y-1">
+                <label className="text-xs text-zinc-400 font-medium block">
+                  Số lượng xuất ({selectedItem?.unit}) <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Package className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                  <Input
+                     type="number"
+                     step="0.001"
+                     placeholder={`Tối đa ${selectedItem ? Number(selectedItem.currentQty) : 0}...`}
+                     value={exportQty}
+                     onChange={(e) => setExportQty(e.target.value)}
+                     className="bg-zinc-950 border-zinc-800 text-white rounded-xl pl-9 focus:border-red-500 transition"
+                     required
+                  />
+                </div>
+                <span className="text-[10px] text-zinc-500 block">
+                  Tồn kho hiện tại: {selectedItem ? Number(selectedItem.currentQty).toLocaleString("vi-VN") : 0} {selectedItem?.unit}
+                </span>
+              </div>
+
+              {/* Note */}
+              <div className="space-y-1">
+                <label className="text-xs text-zinc-400 font-medium block">Lý do / Ghi chú</label>
+                <div className="relative">
+                  <Clipboard className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
+                  <textarea
+                    placeholder="Ví dụ: Xuất chế biến món ăn, Hàng hỏng hết hạn..."
+                    value={exportNote}
+                    onChange={(e) => setExportNote(e.target.value)}
+                    rows={2}
+                    className="w-full bg-zinc-950 border border-zinc-800 text-white rounded-xl p-3 pl-9 text-sm focus:border-red-500 transition outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <DialogFooter className="flex sm:justify-between items-center pt-3 border-t border-zinc-800 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsExportOpen(false)}
+                  className="border-zinc-800 hover:bg-zinc-800 text-xs h-10 w-full sm:w-auto cursor-pointer"
+                >
+                  Hủy bỏ
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmittingExport}
+                  className="bg-red-500 hover:bg-red-600 text-white font-bold text-xs h-10 w-full sm:w-auto cursor-pointer"
+                >
+                  {isSubmittingExport ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "Xác nhận xuất kho"
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Create New Item Dialog (Thêm nguyên liệu mới) */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="border-zinc-800 bg-zinc-900 text-zinc-100 max-w-sm animate-fade-in">
           <DialogHeader>
