@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { PrismaClient } from "@prisma/client";
-import path from "path";
-import fs from "fs";
+import { deleteFromCloudinary } from "../utils/cloudinary";
 
 const prisma = new PrismaClient();
 
@@ -277,8 +276,8 @@ export async function createMenuItem(
     // Handle image upload
     let imageUrl: string | null = null;
     if (req.file) {
-      // File path relative to uploads directory
-      imageUrl = `/uploads/${req.file.filename}`;
+      // In multer-storage-cloudinary, req.file.path contains the Cloudinary URL
+      imageUrl = req.file.path;
     }
 
     // Verify category exists
@@ -287,10 +286,10 @@ export async function createMenuItem(
     });
 
     if (!category) {
-      // If upload failed, clean up the file
+      // If upload failed, clean up the file on Cloudinary
       if (req.file) {
-        fs.unlink(req.file.path, (err) => {
-          if (err) console.error("Failed to delete upload:", err);
+        deleteFromCloudinary(req.file.path).catch((err) => {
+          console.error("Failed to delete failed upload from Cloudinary:", err);
         });
       }
 
@@ -319,10 +318,10 @@ export async function createMenuItem(
       data: menuItem,
     });
   } catch (error) {
-    // Clean up uploaded file if validation failed
+    // Clean up uploaded file from Cloudinary if validation failed
     if (req.file) {
-      fs.unlink(req.file.path, (err) => {
-        if (err) console.error("Failed to delete upload:", err);
+      deleteFromCloudinary(req.file.path).catch((err) => {
+        console.error("Failed to delete failed upload from Cloudinary:", err);
       });
     }
 
@@ -370,8 +369,8 @@ export async function updateMenuItem(
 
     if (!existingItem) {
       if (req.file) {
-        fs.unlink(req.file.path, (err) => {
-          if (err) console.error("Failed to delete upload:", err);
+        deleteFromCloudinary(req.file.path).catch((err) => {
+          console.error("Failed to delete failed upload from Cloudinary:", err);
         });
       }
 
@@ -391,8 +390,8 @@ export async function updateMenuItem(
 
       if (!category) {
         if (req.file) {
-          fs.unlink(req.file.path, (err) => {
-            if (err) console.error("Failed to delete upload:", err);
+          deleteFromCloudinary(req.file.path).catch((err) => {
+            console.error("Failed to delete failed upload from Cloudinary:", err);
           });
         }
 
@@ -408,17 +407,14 @@ export async function updateMenuItem(
     // Handle image replacement
     let imageUrl = existingItem.imageUrl;
     if (req.file) {
-      // Delete old image if exists
+      // Delete old image from Cloudinary if it exists
       if (existingItem.imageUrl) {
-        const oldPath = path.join(
-          process.cwd(),
-          existingItem.imageUrl.replace(/^\//, ""),
-        );
-        fs.unlink(oldPath, (err) => {
-          if (err) console.error("Failed to delete old image:", err);
+        deleteFromCloudinary(existingItem.imageUrl).catch((err) => {
+          console.error("Failed to delete old image from Cloudinary:", err);
         });
       }
-      imageUrl = `/uploads/${req.file.filename}`;
+      // In multer-storage-cloudinary, req.file.path contains the Cloudinary URL
+      imageUrl = req.file.path;
     }
 
     const updateData: any = {
@@ -441,8 +437,8 @@ export async function updateMenuItem(
     });
   } catch (error) {
     if (req.file) {
-      fs.unlink(req.file.path, (err) => {
-        if (err) console.error("Failed to delete upload:", err);
+      deleteFromCloudinary(req.file.path).catch((err) => {
+        console.error("Failed to delete failed upload from Cloudinary:", err);
       });
     }
 
@@ -494,10 +490,20 @@ export async function deleteMenuItem(
       return;
     }
 
-    // Update status to unavailable (soft delete)
+    // Delete image from Cloudinary if it exists
+    if (existingItem.imageUrl) {
+      deleteFromCloudinary(existingItem.imageUrl).catch((err) => {
+        console.error("Failed to delete image from Cloudinary on soft-delete:", err);
+      });
+    }
+
+    // Update status to unavailable (soft delete) and remove the image URL
     const menuItem = await prisma.menuItem.update({
       where: { id: itemId },
-      data: { status: "unavailable" },
+      data: { 
+        status: "unavailable",
+        imageUrl: null,
+      },
     });
 
     res.json({
