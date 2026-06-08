@@ -3,6 +3,7 @@ import { z } from "zod";
 import QRCode from "qrcode";
 import { PrismaClient } from "@prisma/client";
 import { getSocketService } from "../socket";
+import { uploadToCloudinary, deleteFromCloudinary } from "../utils/cloudinary";
 
 const prisma = new PrismaClient();
 
@@ -361,16 +362,27 @@ export async function generateQR(
     }
 
     // Generate QR code URL
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    const frontendUrl = process.env.FRONTEND_URL_QRCODE || "http://localhost:3000";
     const qrContent = `${frontendUrl}/table/${tableId}`;
 
     // Generate QR as base64 data URI
-    const qrCodeUrl = await QRCode.toDataURL(qrContent, {
+    const qrCodeBase64 = await QRCode.toDataURL(qrContent, {
       errorCorrectionLevel: "H",
       type: "image/png",
       width: 300,
       margin: 2,
     });
+
+    // Delete existing QR code from Cloudinary if it exists
+    if (table.qrCodeUrl && table.qrCodeUrl.startsWith("http")) {
+      deleteFromCloudinary(table.qrCodeUrl).catch((err) => {
+        console.error("Failed to delete old QR code from Cloudinary:", err);
+      });
+    }
+
+    // Upload new QR code image to Cloudinary
+    const uploadRes = await uploadToCloudinary(qrCodeBase64, "restaurant/qrcodes");
+    const qrCodeUrl = uploadRes.secure_url;
 
     // Save to database
     const updatedTable = await prisma.table.update({

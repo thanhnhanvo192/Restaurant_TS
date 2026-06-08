@@ -61,4 +61,36 @@ export async function deleteFromCloudinary(url: string): Promise<any> {
   });
 }
 
+/**
+ * Upload an image (file path, buffer, or base64 data URL) to Cloudinary.
+ * 
+ * @param fileSource Path to file, buffer, or base64 data URL
+ * @param folder Cloudinary folder name
+ * @returns Promise with upload result containing secure_url and public_id
+ */
+export async function uploadToCloudinary(
+  fileSource: string,
+  folder: string = "restaurant/qrcodes"
+): Promise<{ secure_url: string; public_id: string }> {
+  return new Promise((resolve, reject) => {
+    cloudinary.uploader.upload(
+      fileSource,
+      {
+        folder,
+      },
+      (error, result) => {
+        if (error) {
+          console.error(`[Cloudinary] ❌ Upload failed:`, error);
+          reject(error);
+        } else {
+          resolve({
+            secure_url: result!.secure_url,
+            public_id: result!.public_id,
+          });
+        }
+      }
+    );
+  });
+}
+
 export { cloudinary };
