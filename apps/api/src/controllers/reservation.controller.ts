@@ -609,13 +609,33 @@ export async function cancelReservation(
     }
 
     // Check authorization (customer can only cancel their own, staff can cancel anyone's)
-    if (req.customer && req.customer.id !== reservation.userId) {
-      res.status(403).json({
-        success: false,
-        error: "You can only cancel your own reservations",
-        code: "FORBIDDEN",
-      });
-      return;
+    if (req.customer) {
+      if (req.customer.id !== reservation.userId) {
+        res.status(403).json({
+          success: false,
+          error: "You can only cancel your own reservations",
+          code: "FORBIDDEN",
+        });
+        return;
+      }
+
+      // Customer can only cancel pending reservations
+      if (reservation.status !== "pending") {
+        if (reservation.status === "confirmed") {
+          res.status(400).json({
+            success: false,
+            error: "Đơn đặt bàn đã được xác nhận. Vui lòng liên hệ trực tiếp với nhà hàng để yêu cầu hủy.",
+            code: "RESERVATION_CONFIRMED_ALREADY",
+          });
+          return;
+        }
+        res.status(400).json({
+          success: false,
+          error: `Reservation is already ${reservation.status}`,
+          code: "INVALID_STATUS",
+        });
+        return;
+      }
     }
 
     if (!req.customer && !req.user) {
@@ -627,17 +647,19 @@ export async function cancelReservation(
       return;
     }
 
-    // Check if already cancelled or completed
-    if (
-      reservation.status === "cancelled" ||
-      reservation.status === "completed"
-    ) {
-      res.status(400).json({
-        success: false,
-        error: `Reservation is already ${reservation.status}`,
-        code: "INVALID_STATUS",
-      });
-      return;
+    // For staff, allow cancellation of pending or confirmed reservations
+    if (req.user) {
+      if (
+        reservation.status !== "pending" &&
+        reservation.status !== "confirmed"
+      ) {
+        res.status(400).json({
+          success: false,
+          error: `Reservation is already ${reservation.status}`,
+          code: "INVALID_STATUS",
+        });
+        return;
+      }
     }
 
     // Update reservation
