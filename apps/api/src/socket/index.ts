@@ -1,5 +1,5 @@
 import { Server, Socket } from "socket.io";
-import { verifyToken, StaffTokenPayload } from "../utils/jwt";
+import { verifyToken, verifyUserToken, StaffTokenPayload, UserTokenPayload } from "../utils/jwt";
 
 /**
  * Socket.IO Service
@@ -18,13 +18,14 @@ import { verifyToken, StaffTokenPayload } from "../utils/jwt";
 
 interface AuthenticatedSocket extends Socket {
   user?: StaffTokenPayload;
+  customer?: UserTokenPayload;
   sessionId?: number;
   tableId?: number;
 }
 
 class SocketService {
   private io: Server;
-  private connectedUsers: Map<string, StaffTokenPayload> = new Map();
+  private connectedUsers: Map<string, StaffTokenPayload | UserTokenPayload> = new Map();
 
   constructor(io: Server) {
     this.io = io;
@@ -53,18 +54,30 @@ class SocketService {
             console.log(
               "[Socket] ℹ️ Unauthenticated connection allowed (dev mode)",
             );
-            socket.user = undefined; // No user attached
+            socket.user = undefined;
+            socket.customer = undefined;
             return next();
           }
           return next(new Error("Missing authentication token"));
         }
 
-        // Verify token
-        const payload = await verifyToken(token as string);
-        socket.user = payload;
-
-        // Track connected user
-        this.connectedUsers.set(socket.id, payload);
+        // Verify token (attempt staff verification first, then customer verification)
+        try {
+          const payload = await verifyToken(token as string);
+          socket.user = payload;
+          this.connectedUsers.set(socket.id, payload);
+        } catch (staffError: any) {
+          if (
+            staffError.message.includes("role is customer") ||
+            staffError.message.includes("Invalid staff token")
+          ) {
+            const customerPayload = await verifyUserToken(token as string);
+            socket.customer = customerPayload;
+            this.connectedUsers.set(socket.id, customerPayload);
+          } else {
+            throw staffError;
+          }
+        }
 
         next();
       } catch (error) {
@@ -82,9 +95,10 @@ class SocketService {
   private setupConnectionHandler(): void {
     this.io.on("connection", (socket: AuthenticatedSocket) => {
       const user = socket.user;
+      const customer = socket.customer;
 
       // In development mode, allow unauthenticated connections for testing
-      if (!user && process.env.NODE_ENV !== "development") {
+      if (!user && !customer && process.env.NODE_ENV !== "development") {
         socket.disconnect();
         return;
       }
@@ -92,11 +106,11 @@ class SocketService {
       console.log(
         `[Socket] Client connected:`,
         socket.id,
-        user ? `(User ${user.id}, ${user.role})` : "(Anonymous - dev mode)",
+        user ? `(Staff ${user.id}, ${user.role})` : (customer ? `(Customer ${customer.id})` : "(Anonymous - dev mode)"),
       );
 
       // In development mode, allow anonymous sockets to join receptionist room for testing
-      if (!user) {
+      if (!user && !customer) {
         console.log(
           `[Socket] Anonymous connection joining 'staff:receptionist' for testing`,
         );
@@ -108,26 +122,36 @@ class SocketService {
       }
 
       // Auto-join authenticated staff to role-based rooms
-      if (user.role === "receptionist") {
-        // Receptionist: receives new orders + sends confirmations to kitchen
-        // Per PRD: receptionist manages tables, orders, payments
-        socket.join("staff:receptionist");
-        socket.join("staff:kitchen");
+      if (user) {
+        if (user.role === "receptionist") {
+          // Receptionist: receives new orders + sends confirmations to kitchen
+          // Per PRD: receptionist manages tables, orders, payments
+          socket.join("staff:receptionist");
+          socket.join("staff:kitchen");
+          console.log(
+            `[Socket] Receptionist ${user.id} joined 'staff:receptionist' and 'staff:kitchen'`,
+          );
+        } else if (user.role === "warehouse") {
+          // Warehouse: only manages inventory - no real-time order/kitchen rooms
+          // Per PRD: warehouse chỉ quản lý kho, không liên quan đến bếp hay orders
+          console.log(
+            `[Socket] Warehouse staff ${user.id} connected - no order/kitchen rooms (inventory only)`,
+          );
+        } else if (user.role === "manager") {
+          // Manager: full access to all staff rooms
+          socket.join("staff:receptionist");
+          socket.join("staff:kitchen");
+          console.log(
+            `[Socket] Manager ${user.id} joined 'staff:receptionist' and 'staff:kitchen'`,
+          );
+        }
+      }
+
+      // Join customer to their specific user room for real-time status updates
+      if (customer) {
+        socket.join(`user:${customer.id}`);
         console.log(
-          `[Socket] Receptionist ${user.id} joined 'staff:receptionist' and 'staff:kitchen'`,
-        );
-      } else if (user.role === "warehouse") {
-        // Warehouse: only manages inventory - no real-time order/kitchen rooms
-        // Per PRD: warehouse chỉ quản lý kho, không liên quan đến bếp hay orders
-        console.log(
-          `[Socket] Warehouse staff ${user.id} connected - no order/kitchen rooms (inventory only)`,
-        );
-      } else if (user.role === "manager") {
-        // Manager: full access to all staff rooms
-        socket.join("staff:receptionist");
-        socket.join("staff:kitchen");
-        console.log(
-          `[Socket] Manager ${user.id} joined 'staff:receptionist' and 'staff:kitchen'`,
+          `[Socket] Customer ${customer.id} joined room 'user:${customer.id}'`,
         );
       }
 
@@ -135,21 +159,21 @@ class SocketService {
       socket.on("join-table", (tableId: number) => {
         socket.join(`table:${tableId}`);
         socket.tableId = tableId;
-        const userId = user ? user.id : "anonymous";
+        const userId = user ? user.id : (customer ? customer.id : "anonymous");
         console.log(`[Socket] User ${userId} joined room 'table:${tableId}'`);
       });
 
       // Handle manual room leave for customers
       socket.on("leave-table", (tableId: number) => {
         socket.leave(`table:${tableId}`);
-        const userId = user ? user.id : "anonymous";
+        const userId = user ? user.id : (customer ? customer.id : "anonymous");
         console.log(`[Socket] User ${userId} left room 'table:${tableId}'`);
       });
 
       // Handle disconnection
       socket.on("disconnect", () => {
         this.connectedUsers.delete(socket.id);
-        const userId = user ? user.id : "anonymous";
+        const userId = user ? user.id : (customer ? customer.id : "anonymous");
         console.log(`[Socket] User ${userId} disconnected:`, socket.id);
       });
     });
@@ -191,6 +215,15 @@ class SocketService {
   }
 
   /**
+   * Emit event to specific customer/user room
+   * Used when reservation status updated
+   */
+  emitToUser(userId: number, event: string, data: any): void {
+    this.io.to(`user:${userId}`).emit(event, data);
+    console.log(`[Socket] Emit '${event}' to 'user:${userId}':`, data);
+  }
+
+  /**
    * Broadcast event to all connected clients
    */
   broadcast(event: string, data: any): void {
@@ -201,7 +234,7 @@ class SocketService {
   /**
    * Get all connected users
    */
-  getConnectedUsers(): Map<string, StaffTokenPayload> {
+  getConnectedUsers(): Map<string, StaffTokenPayload | UserTokenPayload> {
     return this.connectedUsers;
   }
 
