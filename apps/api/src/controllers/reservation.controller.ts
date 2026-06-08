@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { PrismaClient } from "@prisma/client";
-import { io } from "../index";
+import { getSocketService } from "../socket";
 
 const prisma = new PrismaClient();
 
@@ -95,7 +95,7 @@ async function isTableAvailable(
     // Extract time from the Time field
     const resTime =
       res.reservedTime instanceof Date
-        ? `${String(res.reservedTime.getHours()).padStart(2, "0")}:${String(res.reservedTime.getMinutes()).padStart(2, "0")}`
+        ? `${String(res.reservedTime.getUTCHours()).padStart(2, "0")}:${String(res.reservedTime.getUTCMinutes()).padStart(2, "0")}`
         : String(res.reservedTime);
 
     const [resHour, resMinute] = resTime.split(":").map(Number);
@@ -245,7 +245,7 @@ export async function createReservation(
         userId: req.customer.id,
         tableId: body.tableId,
         reservedDate,
-        reservedTime: new Date(`2000-01-01T${body.time}:00`),
+        reservedTime: new Date(`2000-01-01T${body.time}:00Z`),
         guestCount: body.guestCount,
         customerNote: body.customerNote,
         status: "pending",
@@ -275,7 +275,8 @@ export async function createReservation(
     );
 
     try {
-      io.to("staff:receptionist").emit("new-reservation", {
+      const socketService = getSocketService();
+      socketService.emitToReceptionists("new-reservation", {
         reservationId: reservation.id,
         userId: reservation.userId,
         userName: reservation.user?.name || "",
@@ -527,14 +528,23 @@ export async function confirmReservation(
       `[Reservation] ✅ Confirmed reservation #${updated.id} by staff #${req.user.id}`,
     );
 
-    // Emit Socket.IO event to staff receptionist room
+    // Emit Socket.IO event to staff receptionist room & customer room
     try {
-      io.to("staff:receptionist").emit("reservation-confirmed", {
+      const socketService = getSocketService();
+      const eventData = {
         reservationId: updated.id,
         tableId: updated.tableId,
         tableNumber: updated.table?.tableNumber || "",
         status: updated.status,
-      });
+        staffNote: updated.staffNote || "",
+      };
+      
+      // Emit to staff
+      socketService.emitToReceptionists("reservation-confirmed", eventData);
+      
+      // Emit to customer
+      socketService.emitToUser(updated.userId, "reservation-confirmed", eventData);
+
       console.log(
         `[Socket.IO] ✅ Emitted reservation-confirmed event for reservation #${updated.id}`,
       );
@@ -659,14 +669,23 @@ export async function cancelReservation(
       `[Reservation] ❌ Cancelled reservation #${updated.id}`,
     );
 
-    // Emit Socket.IO event to staff receptionist room
+    // Emit Socket.IO event to staff receptionist room & customer room
     try {
-      io.to("staff:receptionist").emit("reservation-cancelled", {
+      const socketService = getSocketService();
+      const eventData = {
         reservationId: updated.id,
         tableId: updated.tableId,
         tableNumber: updated.table?.tableNumber || "",
         status: updated.status,
-      });
+        staffNote: updated.staffNote || "",
+      };
+      
+      // Emit to staff
+      socketService.emitToReceptionists("reservation-cancelled", eventData);
+      
+      // Emit to customer
+      socketService.emitToUser(updated.userId, "reservation-cancelled", eventData);
+
       console.log(
         `[Socket.IO] ✅ Emitted reservation-cancelled event for reservation #${updated.id}`,
       );

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { isAuthenticated, getUser, removeToken } from "@/lib/auth";
+import { getSocket, disconnectSocket } from "@/lib/socket";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -44,6 +45,7 @@ interface Reservation {
   guestCount: number;
   status: "pending" | "confirmed" | "cancelled" | "completed";
   customerNote?: string | null;
+  staffNote?: string | null;
   table?: Table | null;
 }
 
@@ -100,6 +102,56 @@ export default function ReservationsPage() {
     fetchMyReservations();
   }, []);
 
+  // Listen to real-time events for this customer
+  useEffect(() => {
+    const socket = getSocket();
+    if (socket) {
+      console.log("[Socket] Customer Subscribing to reservation events");
+
+      const handleConfirmed = (data: {
+        reservationId: number;
+        tableNumber: string;
+        status: string;
+        staffNote?: string;
+      }) => {
+        console.log("[Socket] reservation-confirmed received:", data);
+        setReservations((prev) =>
+          prev.map((res) =>
+            res.id === data.reservationId
+              ? { ...res, status: "confirmed", staffNote: data.staffNote || res.staffNote }
+              : res
+          )
+        );
+        toast.success(`Đơn đặt bàn #${data.reservationId} (Bàn ${data.tableNumber}) đã được XÁC NHẬN!`);
+      };
+
+      const handleCancelled = (data: {
+        reservationId: number;
+        tableNumber: string;
+        status: string;
+        staffNote?: string;
+      }) => {
+        console.log("[Socket] reservation-cancelled received:", data);
+        setReservations((prev) =>
+          prev.map((res) =>
+            res.id === data.reservationId
+              ? { ...res, status: "cancelled", staffNote: data.staffNote || res.staffNote }
+              : res
+          )
+        );
+        toast.error(`Đơn đặt bàn #${data.reservationId} đã bị HỦY. Lý do: "${data.staffNote || ''}"`);
+      };
+
+      socket.on("reservation-confirmed", handleConfirmed);
+      socket.on("reservation-cancelled", handleCancelled);
+
+      return () => {
+        socket.off("reservation-confirmed", handleConfirmed);
+        socket.off("reservation-cancelled", handleCancelled);
+      };
+    }
+  }, []);
+
   const fetchMyReservations = async () => {
     setIsLoadingList(true);
     try {
@@ -119,6 +171,7 @@ export default function ReservationsPage() {
 
   const handleLogout = () => {
     removeToken();
+    disconnectSocket();
     toast.success("Đã đăng xuất tài khoản.");
     router.push("/customer/login");
   };
