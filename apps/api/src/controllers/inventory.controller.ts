@@ -390,6 +390,9 @@ export async function addStock(
       });
 
       return { item: updatedItem, transaction: txRecord };
+    }, {
+      maxWait: 10000,
+      timeout: 20000,
     });
 
     res.status(201).json({
@@ -497,6 +500,9 @@ export async function removeStock(
       });
 
       return { item: updatedItem, transaction: txRecord };
+    }, {
+      maxWait: 10000,
+      timeout: 20000,
     });
 
     res.status(201).json({
@@ -591,6 +597,9 @@ export async function adjustStock(
       });
 
       return { item: updatedItem, transaction: txRecord };
+    }, {
+      maxWait: 10000,
+      timeout: 20000,
     });
 
     res.json({

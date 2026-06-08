@@ -128,9 +128,10 @@ export async function createInvoice(
 
     // Tạo invoice + payment record trong transaction
     const invoice = await prisma.$transaction(async (tx: any) => {
-      // Tạo invoice
-      const newInvoice = await tx.invoice.create({
-        data: {
+      // Upsert invoice (nếu đã tồn tại thì update lại thông tin mới nhất)
+      const newInvoice = await tx.invoice.upsert({
+        where: { sessionId: sessionId },
+        create: {
           sessionId: sessionId,
           createdById: req.user!.id,
           subtotal: subtotal,
@@ -138,6 +139,13 @@ export async function createInvoice(
           discountAmount: discountAmount,
           total: total,
           status: "unpaid",
+        },
+        update: {
+          subtotal: subtotal,
+          discountPct: discountPct,
+          discountAmount: discountAmount,
+          total: total,
+          createdById: req.user!.id,
         },
         include: {
           session: {
@@ -151,6 +159,9 @@ export async function createInvoice(
       });
 
       return newInvoice;
+    }, {
+      maxWait: 10000,
+      timeout: 20000,
     });
 
     res.status(201).json({
@@ -428,6 +439,9 @@ export async function payByCash(
       });
 
       return updatedInvoice;
+    }, {
+      maxWait: 10000,
+      timeout: 20000,
     });
 
     // Emit Socket.IO event

@@ -113,6 +113,30 @@ function InvoicePageContent() {
     try {
       const res = await api.get(`/api/orders/${sessionId}`);
       setOrders(res.data.data || []);
+
+      // Check if invoice already exists for this session
+      try {
+        const invoiceRes = await api.get(`/api/invoices/sessions/${sessionId}/invoice`);
+        if (invoiceRes.data && invoiceRes.data.success && invoiceRes.data.data) {
+          const existingInvoice = invoiceRes.data.data;
+          setInvoice(existingInvoice);
+          setIsCreated(true);
+          setDiscountPct(Number(existingInvoice.discountPct) || 0);
+          if (existingInvoice.status === "paid") {
+            setIsPaid(true);
+          } else {
+            setIsPaid(false);
+          }
+        } else {
+          setInvoice(null);
+          setIsCreated(false);
+          setIsPaid(false);
+        }
+      } catch (invoiceErr: any) {
+        setInvoice(null);
+        setIsCreated(false);
+        setIsPaid(false);
+      }
     } catch (err) {
       console.error(err);
       toast.error("Không thể tải danh sách order của session.");

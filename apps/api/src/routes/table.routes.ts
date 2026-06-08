@@ -37,9 +37,9 @@ router.post("/", verifyStaffToken, requireRole(["manager"]), createTable);
  * PATCH /api/tables/:id
  * Update table
  * Body: { tableNumber?, capacity?, location?, notes?, status? }
- * Access: manager only
+ * Access: manager, receptionist
  */
-router.patch("/:id", verifyStaffToken, requireRole(["manager"]), updateTable);
+router.patch("/:id", verifyStaffToken, requireRole(["manager", "receptionist"]), updateTable);
 
 /**
  * DELETE /api/tables/:id

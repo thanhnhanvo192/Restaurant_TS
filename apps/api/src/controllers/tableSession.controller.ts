@@ -196,6 +196,9 @@ export async function openSession(
         });
 
         return session;
+      }, {
+        maxWait: 10000,
+        timeout: 20000,
       });
 
       res.status(201).json({
@@ -342,6 +345,9 @@ export async function closeSession(
       });
 
       return updatedSession;
+    }, {
+      maxWait: 10000,
+      timeout: 20000,
     });
 
     res.status(200).json({

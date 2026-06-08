@@ -70,6 +70,11 @@ export default function ReceptionistTablesPage() {
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [dialogOrders, setDialogOrders] = useState<OrderAPI[]>([]);
 
+  // Cleaning table states
+  const [cleaningTable, setCleaningTable] = useState<TableExtended | null>(null);
+  const [isCleaningDialogOpen, setIsCleaningDialogOpen] = useState(false);
+  const [isSubmittingCleaning, setIsSubmittingCleaning] = useState(false);
+
   // Function to load orders for an occupied table
   const fetchTableOrders = async (sessionId: number) => {
     try {
@@ -206,7 +211,8 @@ export default function ReceptionistTablesPage() {
       } else if (table.status === "reserved") {
         toast.info(`Bàn ${table.tableNumber} đã được đặt trước.`);
       } else if (table.status === "cleaning") {
-        toast.info(`Bàn ${table.tableNumber} đang được dọn dẹp.`);
+        setCleaningTable(table);
+        setIsCleaningDialogOpen(true);
       }
       return;
     }
@@ -219,6 +225,30 @@ export default function ReceptionistTablesPage() {
       const orders = await fetchTableOrders(table.tableSessions[0].id);
       setDialogOrders(orders);
       setIsLoadingOrders(false);
+    }
+  };
+
+  const handleCompleteCleaning = async () => {
+    if (!cleaningTable) return;
+    setIsSubmittingCleaning(true);
+    try {
+      const res = await api.patch(`/api/tables/${cleaningTable.id}`, {
+        status: "available",
+      });
+      if (res.data && res.data.success) {
+        toast.success(`Đã chuyển Bàn ${cleaningTable.tableNumber} sang trạng thái trống (available).`);
+        setIsCleaningDialogOpen(false);
+        setCleaningTable(null);
+        fetchTables(false);
+      } else {
+        toast.error("Không thể cập nhật trạng thái bàn.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      const errMsg = err.response?.data?.error || "Lỗi cập nhật trạng thái bàn.";
+      toast.error(errMsg);
+    } finally {
+      setIsSubmittingCleaning(false);
     }
   };
 
@@ -251,7 +281,7 @@ export default function ReceptionistTablesPage() {
       case "cleaning":
         return {
           title: "Đang dọn dẹp",
-          cardBg: "bg-zinc-900 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/40 shadow-none",
+          cardBg: "bg-zinc-900 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/40 shadow-none cursor-pointer",
           badgeBg: "bg-gray-100 text-gray-800 border-gray-250",
           icon: Coffee,
           colorText: "text-zinc-400",
@@ -496,6 +526,43 @@ export default function ReceptionistTablesPage() {
                 Tạo hóa đơn & Thanh toán
               </Button>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog xác nhận hoàn tất dọn dẹp bàn */}
+      <Dialog open={isCleaningDialogOpen} onOpenChange={setIsCleaningDialogOpen}>
+        <DialogContent className="border-zinc-800 bg-zinc-900 text-zinc-100 max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-white font-heading flex items-center gap-2">
+              Hoàn tất dọn dẹp
+            </DialogTitle>
+            <DialogDescription className="text-xs text-zinc-400">
+              Xác nhận Bàn {cleaningTable?.tableNumber} đã dọn dẹp xong và sẵn sàng đón khách mới?
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="flex gap-2 justify-end mt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsCleaningDialogOpen(false);
+                setCleaningTable(null);
+              }}
+              className="border-zinc-800 hover:bg-zinc-800 text-xs h-9 cursor-pointer"
+            >
+              Hủy
+            </Button>
+            <Button
+              onClick={handleCompleteCleaning}
+              disabled={isSubmittingCleaning}
+              className="bg-green-600 hover:bg-green-700 text-white font-bold text-xs h-9 cursor-pointer"
+            >
+              {isSubmittingCleaning ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+              ) : null}
+              Xác nhận
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
