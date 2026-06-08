@@ -466,6 +466,17 @@ export default function ReceptionistReservationsPage() {
                       </Button>
                     </div>
                   )}
+                  {res.status === "confirmed" && (
+                    <div className="flex sm:flex-row lg:flex-col gap-2 shrink-0 pt-3 lg:pt-0 border-t border-zinc-800/40 lg:border-t-0 lg:pl-4">
+                      <Button
+                        onClick={() => openActionDialog(res, "cancel")}
+                        variant="destructive"
+                        className="text-xs h-9 px-4 rounded-lg flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <XCircle className="h-3.5 w-3.5" /> Hủy đặt bàn
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
