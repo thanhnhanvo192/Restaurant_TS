@@ -328,7 +328,7 @@ export default function MenuPage({ params }: PageProps) {
                   <div className="relative w-24 h-24 shrink-0 bg-zinc-950 flex items-center justify-center overflow-hidden border-r border-zinc-900">
                     {item.imageUrl ? (
                       <img
-                        src={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}${item.imageUrl}`}
+                        src={item.imageUrl.startsWith("http") ? item.imageUrl : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}${item.imageUrl}`}
                         alt={item.name}
                         className="w-full h-full object-cover object-center"
                       />

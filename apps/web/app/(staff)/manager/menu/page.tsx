@@ -166,7 +166,13 @@ export default function ManagerMenuPage() {
     setItemCategoryId(item.categoryId.toString());
     setItemSortOrder(item.sortOrder.toString());
     setItemImage(null);
-    setItemImagePreview(item.imageUrl ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${item.imageUrl}` : null);
+    setItemImagePreview(
+      item.imageUrl
+        ? item.imageUrl.startsWith("http")
+          ? item.imageUrl
+          : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${item.imageUrl}`
+        : null
+    );
     setIsItemDialogOpen(true);
   };
 
@@ -464,7 +470,7 @@ export default function ManagerMenuPage() {
                             <div className="flex items-center gap-3">
                               {item.imageUrl ? (
                                 <img
-                                  src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${item.imageUrl}`}
+                                  src={item.imageUrl.startsWith("http") ? item.imageUrl : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${item.imageUrl}`}
                                   alt={item.name}
                                   className="w-10 h-10 rounded-lg object-cover border border-zinc-800 bg-zinc-950"
                                 />
