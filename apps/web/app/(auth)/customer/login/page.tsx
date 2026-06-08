@@ -198,14 +198,33 @@ function CustomerLoginForm() {
         </form>
       </CardContent>
 
-      <CardFooter className="flex justify-center border-t border-zinc-800/50 bg-zinc-950/20 py-3 text-xs text-zinc-400">
-        Chưa có tài khoản?{" "}
-        <Link
-          href={redirect !== "/customer/reservations" ? `/customer/register?redirect=${encodeURIComponent(redirect)}` : "/customer/register"}
-          className="text-amber-500 hover:text-amber-400 ml-1 font-medium underline-offset-4 hover:underline transition-colors"
-        >
-          Đăng ký ngay
-        </Link>
+      <CardFooter className="flex flex-col gap-2 border-t border-zinc-800/50 bg-zinc-950/20 py-3 text-xs text-zinc-400">
+        <div className="flex justify-center w-full">
+          Chưa có tài khoản?{" "}
+          <Link
+            href={redirect !== "/customer/reservations" ? `/customer/register?redirect=${encodeURIComponent(redirect)}` : "/customer/register"}
+            className="text-amber-500 hover:text-amber-400 ml-1 font-medium underline-offset-4 hover:underline transition-colors"
+          >
+            Đăng ký ngay
+          </Link>
+        </div>
+        <div className="flex justify-center border-t border-zinc-900/60 pt-2 w-full">
+          Bạn là nhân viên?{" "}
+          <Link
+            href="/staff/login"
+            className="text-amber-500 hover:text-amber-400 ml-1 font-semibold underline-offset-4 hover:underline transition-colors"
+          >
+            Đăng nhập hệ thống nhân viên
+          </Link>
+        </div>
+        <div className="flex justify-center border-t border-zinc-900/60 pt-2 w-full">
+          <Link
+            href="/"
+            className="text-zinc-500 hover:text-zinc-300 font-semibold underline-offset-4 hover:underline transition-colors"
+          >
+            ← Quay lại trang chủ
+          </Link>
+        </div>
       </CardFooter>
     </Card>
   );

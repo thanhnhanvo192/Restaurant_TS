@@ -2,12 +2,13 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useForm, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { api } from "@/lib/api";
 import { setToken } from "@/lib/auth";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
@@ -188,6 +189,15 @@ export default function StaffLoginPage() {
           </Button>
         </form>
       </CardContent>
+      <CardFooter className="flex justify-center border-t border-zinc-800/50 bg-zinc-950/20 py-3.5 text-xs text-zinc-400">
+        Bạn là khách hàng?{" "}
+        <Link
+          href="/customer/login"
+          className="text-amber-500 hover:text-amber-400 ml-1 font-semibold underline-offset-4 hover:underline transition-colors"
+        >
+          Quay lại trang đăng nhập khách hàng
+        </Link>
+      </CardFooter>
     </Card>
   );
 }
