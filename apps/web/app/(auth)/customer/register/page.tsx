@@ -135,7 +135,7 @@ function CustomerRegisterForm() {
               <path d="M11 3h2" />
             </svg>
           </div>
-          <CardTitle className="text-xl font-bold tracking-tight text-white font-heading">
+          <CardTitle className="text-xl font-bold tracking-tight text-zinc-100 font-heading">
             Tạo tài khoản mới
           </CardTitle>
           <CardDescription className="text-xs text-zinc-400 text-center px-4">

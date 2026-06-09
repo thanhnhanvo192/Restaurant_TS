@@ -333,7 +333,7 @@ export default function ReservationsPage() {
       <header className="sticky top-0 z-40 w-full border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-md px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Calendar className="size-5 text-amber-500" />
-          <h1 className="text-sm font-semibold text-white">Gourmet Booking</h1>
+          <h1 className="text-sm font-semibold text-zinc-100">Gourmet Booking</h1>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 text-xs text-zinc-400 bg-zinc-800/40 px-2.5 py-1 rounded-lg border border-zinc-800">
@@ -353,7 +353,7 @@ export default function ReservationsPage() {
       <main className="max-w-md mx-auto w-full px-4 py-6 space-y-6">
         {/* Banner */}
         <div className="text-center space-y-1">
-          <h2 className="text-2xl font-bold tracking-tight text-white">ĐẶT BÀN ONLINE</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-zinc-100">ĐẶT BÀN ONLINE</h2>
           <p className="text-xs text-zinc-400">Trải nghiệm bữa tiệc sang trọng và chu đáo</p>
         </div>
 
@@ -362,7 +362,7 @@ export default function ReservationsPage() {
           <button
             onClick={() => setActiveTab("list")}
             className={`py-2 text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-              activeTab === "list" ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-400 hover:text-zinc-200"
+              activeTab === "list" ? "bg-primary text-white shadow-sm" : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
             <BookOpen className="size-3.5" /> Lịch sử đặt bàn
@@ -370,7 +370,7 @@ export default function ReservationsPage() {
           <button
             onClick={() => setActiveTab("new")}
             className={`py-2 text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-              activeTab === "new" ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-400 hover:text-zinc-200"
+              activeTab === "new" ? "bg-primary text-white shadow-sm" : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
             <Plus className="size-3.5" /> Đặt bàn mới
@@ -428,7 +428,7 @@ export default function ReservationsPage() {
                         <div className="flex items-center gap-1.5 text-zinc-400 col-span-2">
                           <Users className="size-3.5 text-amber-500" />
                           <span className="text-zinc-200">
-                            Số khách: <strong className="text-white">{res.guestCount}</strong> người
+                            Số khách: <strong className="text-zinc-100">{res.guestCount}</strong> người
                           </span>
                         </div>
                         {res.table && (
@@ -437,7 +437,7 @@ export default function ReservationsPage() {
                               B
                             </span>
                             <span className="text-zinc-200">
-                              Bàn số: <strong className="text-white">{res.table.tableNumber}</strong> (Sức chứa {res.table.capacity} • {res.table.location || "Sảnh chính"})
+                              Bàn số: <strong className="text-zinc-100">{res.table.tableNumber}</strong> (Sức chứa {res.table.capacity} • {res.table.location || "Sảnh chính"})
                             </span>
                           </div>
                         )}
@@ -473,7 +473,7 @@ export default function ReservationsPage() {
           <div className="space-y-5">
             <Card className="border-zinc-850 bg-zinc-900/20 backdrop-blur-xl">
               <CardHeader className="p-4 pb-0">
-                <CardTitle className="text-base font-bold text-white">Tìm Bàn Trống</CardTitle>
+                <CardTitle className="text-base font-bold text-zinc-100">Tìm Bàn Trống</CardTitle>
                 <CardDescription className="text-xs text-zinc-400">Chọn thời gian và số lượng khách để kiểm tra bàn khả dụng.</CardDescription>
               </CardHeader>
               <CardContent className="p-4">
@@ -519,16 +519,16 @@ export default function ReservationsPage() {
                   <Button
                     type="submit"
                     disabled={isSearchingTables}
-                    className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-750 text-white font-semibold py-4 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer text-xs"
+                    className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-4 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer text-xs"
                   >
                     {isSearchingTables ? (
                       <>
-                        <Loader2 className="size-4 animate-spin text-amber-500" />
+                        <Loader2 className="size-4 animate-spin text-white" />
                         Đang quét dữ liệu...
                       </>
                     ) : (
                       <>
-                        <Search className="size-4 text-amber-500" /> Tìm bàn trống
+                        <Search className="size-4 text-white" /> Tìm bàn trống
                       </>
                     )}
                   </Button>
@@ -571,7 +571,7 @@ export default function ReservationsPage() {
                           }`}
                         >
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-bold text-white">Bàn {table.tableNumber}</span>
+                            <span className="text-sm font-bold text-zinc-100">Bàn {table.tableNumber}</span>
                             <span className="text-[10px] text-zinc-500 font-medium">Sức chứa: {table.capacity}</span>
                           </div>
                           <div>

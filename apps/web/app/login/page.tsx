@@ -51,7 +51,7 @@ export default function LoginPortalPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-zinc-100 relative overflow-hidden px-4">
+    <div className="dark min-h-screen flex items-center justify-center bg-zinc-950 text-zinc-100 relative overflow-hidden px-4">
       {/* Background decorations */}
       <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-amber-500/10 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] rounded-full bg-orange-600/10 blur-[120px] pointer-events-none" />
@@ -61,7 +61,7 @@ export default function LoginPortalPage() {
           <div className="relative flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 shadow-[0_0_25px_rgba(245,158,11,0.3)] mb-2">
             <UtensilsCrossed className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent font-heading">
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-zinc-100 font-heading">
             Gourmet Restaurant
           </h1>
           <p className="text-sm text-zinc-400 max-w-md">

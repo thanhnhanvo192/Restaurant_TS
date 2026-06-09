@@ -100,7 +100,7 @@ export function TableLandingClient({ tableId, table, session }: TableLandingClie
               {table.capacity}
             </div>
           </div>
-          <CardTitle className="text-4xl font-extrabold tracking-tight text-white font-heading">
+          <CardTitle className="text-4xl font-extrabold tracking-tight text-zinc-100 font-heading">
             BÀN {table.tableNumber}
           </CardTitle>
           <CardDescription className="text-zinc-400 text-sm mt-1">

@@ -235,7 +235,7 @@ export default function StaffLayout({
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-zinc-950 text-zinc-100 font-sans selection:bg-amber-500 selection:text-zinc-950">
+    <div className="dark min-h-screen flex flex-col bg-zinc-950 text-zinc-100 font-sans selection:bg-amber-500 selection:text-zinc-950">
       {/* Premium Desktop Sidebar + Header layout */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar - Desktop */}
@@ -280,7 +280,7 @@ export default function StaffLayout({
                 {staffUser.name ? staffUser.name[0].toUpperCase() : "NV"}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-white truncate">{staffUser.name || "Nhân viên"}</p>
+                <p className="text-xs font-bold text-zinc-100 truncate">{staffUser.name || "Nhân viên"}</p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <Badge variant="secondary" className="px-1.5 py-0 text-[9px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 capitalize">
                     {getRoleDisplayName(staffUser.role)}
@@ -323,7 +323,7 @@ export default function StaffLayout({
 
             {/* Title / Info for desktop layout */}
             <div className="hidden md:flex items-center gap-2.5">
-              <h2 className="text-base font-bold text-white uppercase tracking-wider">
+              <h2 className="text-base font-bold text-zinc-100 uppercase tracking-wider">
                 {pathname.includes("tables") && "Sơ đồ bàn ăn"}
                 {pathname.includes("reservations") && "Quản lý đặt bàn"}
                 {pathname.includes("orders") && "Hệ thống quản lý Orders"}

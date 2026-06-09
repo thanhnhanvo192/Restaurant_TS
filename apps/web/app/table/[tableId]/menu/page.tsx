@@ -125,7 +125,7 @@ export default function MenuPage({ params }: PageProps) {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-950/40 border border-amber-900/50 text-amber-500">
             <Info className="h-6 h-6" />
           </div>
-          <h2 className="text-xl font-semibold tracking-tight text-white mb-2">
+          <h2 className="text-xl font-semibold tracking-tight text-zinc-100 mb-2">
             Yêu Cầu Check-in
           </h2>
           <p className="text-sm text-zinc-400 mb-6">
@@ -249,7 +249,7 @@ export default function MenuPage({ params }: PageProps) {
             <UtensilsCrossed className="size-4 font-bold" />
           </div>
           <div>
-            <h1 className="text-sm font-semibold text-white">Gourmet Menu</h1>
+            <h1 className="text-sm font-semibold text-zinc-100">Gourmet Menu</h1>
             <p className="text-[10px] text-zinc-400">Trải nghiệm ẩm thực cao cấp</p>
           </div>
         </div>
@@ -270,7 +270,7 @@ export default function MenuPage({ params }: PageProps) {
           </div>
           <div className="space-y-1 relative z-10">
             <span className="text-[10px] font-bold tracking-wider text-amber-500 uppercase">Khuyến Mãi Hôm Nay</span>
-            <h3 className="text-sm font-bold text-white">Combo Thượng Hạng</h3>
+            <h3 className="text-sm font-bold text-zinc-100">Combo Thượng Hạng</h3>
             <p className="text-xs text-zinc-400">Giảm giá 10% khi đặt trước qua QR.</p>
           </div>
         </div>
@@ -340,7 +340,7 @@ export default function MenuPage({ params }: PageProps) {
                   </div>
                   <CardContent className="p-3 flex-1 flex flex-col justify-between min-w-0">
                     <div className="space-y-0.5 min-w-0">
-                      <h4 className="text-sm font-bold text-white truncate">{item.name}</h4>
+                      <h4 className="text-sm font-bold text-zinc-100 truncate">{item.name}</h4>
                       <p className="text-[11px] text-zinc-400 line-clamp-2 leading-relaxed">
                         {item.description || "Hương vị ẩm thực truyền thống Gourmet phong cách Châu Âu."}
                       </p>
@@ -358,7 +358,7 @@ export default function MenuPage({ params }: PageProps) {
                           >
                             <Minus className="size-3" />
                           </button>
-                          <span className="px-1 text-[11px] font-bold text-white min-w-[1.25rem] text-center">
+                          <span className="px-1 text-[11px] font-bold text-zinc-100 min-w-[1.25rem] text-center">
                             {cartQuantity}
                           </span>
                           <button
@@ -399,7 +399,7 @@ export default function MenuPage({ params }: PageProps) {
               </div>
               <div>
                 <p className="text-[10px] text-zinc-400">Giỏ hàng</p>
-                <p className="text-sm font-bold text-white">{formatPrice(totalPrice)}</p>
+                <p className="text-sm font-bold text-zinc-100">{formatPrice(totalPrice)}</p>
               </div>
             </div>
             <Button
@@ -433,7 +433,7 @@ export default function MenuPage({ params }: PageProps) {
               <div key={item.id} className="space-y-2 border-b border-zinc-800 pb-3">
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-white truncate">{item.name}</p>
+                    <p className="text-sm font-bold text-zinc-100 truncate">{item.name}</p>
                     <p className="text-xs text-amber-500 font-semibold">{formatPrice(item.price * item.quantity)}</p>
                   </div>
                   <div className="flex items-center bg-zinc-950 border border-zinc-800 rounded-lg h-8 overflow-hidden shrink-0">
@@ -443,7 +443,7 @@ export default function MenuPage({ params }: PageProps) {
                     >
                       <Minus className="size-3.5" />
                     </button>
-                    <span className="px-1 text-xs font-bold text-white min-w-[1.5rem] text-center">
+                    <span className="px-1 text-xs font-bold text-zinc-100 min-w-[1.5rem] text-center">
                       {item.quantity}
                     </span>
                     <button
@@ -479,7 +479,7 @@ export default function MenuPage({ params }: PageProps) {
           <div className="space-y-3 pt-2 bg-zinc-950/30 p-3 rounded-xl border border-zinc-800/50">
             <div className="flex items-center justify-between text-xs text-zinc-400">
               <span>Tổng số lượng:</span>
-              <span className="font-bold text-white">{totalItems} món</span>
+              <span className="font-bold text-zinc-100">{totalItems} món</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-zinc-300">Tổng cộng thanh toán:</span>

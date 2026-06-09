@@ -27,7 +27,7 @@ export default function ErrorBoundary({
             <AlertCircle className="w-10 h-10 text-red-500" />
           </div>
 
-          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-500 bg-clip-text text-transparent font-heading mb-3">
+          <h1 className="text-3xl font-extrabold tracking-tight text-zinc-100 font-heading mb-3">
             Đã Xảy Ra Sự Cố
           </h1>
           <p className="text-sm text-zinc-400 max-w-xs leading-relaxed">

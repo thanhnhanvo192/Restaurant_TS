@@ -117,7 +117,7 @@ export default function StaffLoginPage() {
               <path d="M11 3h2" />
             </svg>
           </div>
-          <CardTitle className="text-xl font-bold tracking-tight text-white font-heading">
+          <CardTitle className="text-xl font-bold tracking-tight text-zinc-100 font-heading">
             Gourmet Staff
           </CardTitle>
           <CardDescription className="text-xs text-zinc-400">
