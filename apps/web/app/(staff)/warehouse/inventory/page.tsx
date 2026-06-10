@@ -425,7 +425,7 @@ export default function WarehouseInventoryPage() {
       <Dialog open={isRestockOpen} onOpenChange={setIsRestockOpen}>
         <DialogContent className="border-zinc-800 bg-zinc-900 text-zinc-100 max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-white font-heading flex items-center gap-2">
+            <DialogTitle className="text-base font-bold text-black font-heading flex items-center gap-2">
               <Boxes className="w-5 h-5 text-amber-500" />
               <span>Nhập kho: {selectedItem?.name}</span>
             </DialogTitle>
@@ -528,7 +528,7 @@ export default function WarehouseInventoryPage() {
         <Dialog open={isExportOpen} onOpenChange={setIsExportOpen}>
           <DialogContent className="border-zinc-800 bg-zinc-900 text-zinc-100 max-w-sm">
             <DialogHeader>
-              <DialogTitle className="text-base font-bold text-white font-heading flex items-center gap-2">
+              <DialogTitle className="text-base font-bold text-black font-heading flex items-center gap-2">
                 <Boxes className="w-5 h-5 text-red-500" />
                 <span>Xuất kho: {selectedItem?.name}</span>
               </DialogTitle>
@@ -605,7 +605,7 @@ export default function WarehouseInventoryPage() {
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="border-zinc-800 bg-zinc-900 text-zinc-100 max-w-sm animate-fade-in">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-white font-heading">
+            <DialogTitle className="text-base font-bold text-black font-heading">
               Thêm nguyên liệu / hàng hoá mới
             </DialogTitle>
             <DialogDescription className="text-xs text-zinc-400">

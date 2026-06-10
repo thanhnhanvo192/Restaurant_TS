@@ -477,7 +477,7 @@ export default function ManagerTablesPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="border-zinc-800 bg-zinc-900 text-zinc-100 max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-white font-heading">
+            <DialogTitle className="text-base font-bold text-black font-heading">
               {editingTable ? `Cập nhật: Bàn ${editingTable.tableNumber}` : "Thêm bàn mới"}
             </DialogTitle>
             <DialogDescription className="text-xs text-zinc-400">
@@ -583,7 +583,7 @@ export default function ManagerTablesPage() {
       <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
         <DialogContent className="border-zinc-800 bg-zinc-900 text-zinc-100 max-w-sm text-center">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-white font-heading">
+            <DialogTitle className="text-base font-bold text-black font-heading">
               Mã QR check-in: Bàn {qrTable?.tableNumber}
             </DialogTitle>
             <DialogDescription className="text-xs text-zinc-400">
@@ -610,10 +610,10 @@ export default function ManagerTablesPage() {
             {qrTable && (
               <div className="mt-4 text-xs">
                 <span className="text-zinc-400">Khu vực: </span>
-                <span className="text-white font-semibold">{qrTable.location || "Sảnh chính"}</span>
+                <span className="text-black font-semibold">{qrTable.location || "Sảnh chính"}</span>
                 <span className="text-zinc-500 mx-2">•</span>
                 <span className="text-zinc-400">Sức chứa: </span>
-                <span className="text-white font-semibold">{qrTable.capacity} khách</span>
+                <span className="text-black font-semibold">{qrTable.capacity} khách</span>
               </div>
             )}
           </div>
@@ -622,7 +622,7 @@ export default function ManagerTablesPage() {
             <Button
               onClick={handlePrintQr}
               disabled={!qrCodeDataUrl}
-              className="bg-zinc-800 hover:bg-zinc-700 text-white font-semibold text-xs h-10 w-full flex items-center justify-center gap-1.5 cursor-pointer"
+              className="bg-zinc-800 hover:bg-zinc-700 text-black font-semibold text-xs h-10 w-full flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Printer className="w-4 h-4 text-amber-500" /> In mã QR
             </Button>

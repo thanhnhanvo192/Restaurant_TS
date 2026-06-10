@@ -545,7 +545,7 @@ export default function ManagerMenuPage() {
       <Dialog open={isItemDialogOpen} onOpenChange={setIsItemDialogOpen}>
         <DialogContent className="border-zinc-800 bg-zinc-900 text-zinc-100 max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-white font-heading">
+            <DialogTitle className="text-base font-bold text-black font-heading">
               {editingItem ? `Chỉnh sửa món: ${editingItem.name}` : "Thêm món ăn mới"}
             </DialogTitle>
             <DialogDescription className="text-xs text-zinc-400">

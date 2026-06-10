@@ -488,7 +488,7 @@ export default function ReceptionistReservationsPage() {
       <Dialog open={selectedRes !== null} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent className="border-zinc-800 bg-zinc-900 text-zinc-100 max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-white flex items-center gap-2">
+            <DialogTitle className="text-base font-bold text-black flex items-center gap-2">
               {dialogAction === "confirm" ? (
                 <>
                   <CheckCircle2 className="h-5 w-5 text-emerald-400" />
@@ -502,8 +502,8 @@ export default function ReceptionistReservationsPage() {
               )}
             </DialogTitle>
             <DialogDescription className="text-xs text-zinc-400">
-              Khách hàng: <strong className="text-white">{selectedRes?.user?.name}</strong> • Số điện thoại:{" "}
-              <strong className="text-white">{selectedRes?.user?.phone || "N/A"}</strong>
+              Khách hàng: <strong className="text-black">{selectedRes?.user?.name}</strong> • Số điện thoại:{" "}
+              <strong className="text-black">{selectedRes?.user?.phone || "N/A"}</strong>
             </DialogDescription>
           </DialogHeader>
 

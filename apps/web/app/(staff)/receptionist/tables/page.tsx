@@ -534,7 +534,7 @@ export default function ReceptionistTablesPage() {
       <Dialog open={isCleaningDialogOpen} onOpenChange={setIsCleaningDialogOpen}>
         <DialogContent className="border-zinc-800 bg-zinc-900 text-zinc-100 max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-white font-heading flex items-center gap-2">
+            <DialogTitle className="text-lg font-bold text-black font-heading flex items-center gap-2">
               Hoàn tất dọn dẹp
             </DialogTitle>
             <DialogDescription className="text-xs text-zinc-400">

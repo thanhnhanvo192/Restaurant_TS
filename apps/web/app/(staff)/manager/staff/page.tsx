@@ -335,7 +335,7 @@ export default function ManagerStaffPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="border-zinc-800 bg-zinc-900 text-zinc-100 max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-white font-heading">
+            <DialogTitle className="text-base font-bold text-black font-heading">
               {editingStaff ? `Cập nhật nhân viên: ${editingStaff.name}` : "Thêm nhân viên mới"}
             </DialogTitle>
             <DialogDescription className="text-xs text-zinc-400">
