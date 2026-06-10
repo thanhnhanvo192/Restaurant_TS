@@ -2,6 +2,11 @@ import { Request, Response, NextFunction } from "express";
 import { PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { getSocketService } from "../socket";
+import {
+  createPaymentUrl,
+  verifyReturnUrl,
+  verifyIpn,
+} from "../services/vnpay.service";
 
 const prisma = new PrismaClient();
 
@@ -469,5 +474,461 @@ export async function payByCash(
     });
   } catch (error) {
     next(error);
+  }
+}
+
+/**
+ * POST /api/invoices/:id/pay/vnpay
+ * Tạo link thanh toán VNPay cho hóa đơn
+ * Receptionist or Manager
+ */
+export async function createVnpayPayment(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    // Validate receptionist or manager role
+    if (!req.user || (req.user.role !== "receptionist" && req.user.role !== "manager")) {
+      res.status(403).json({
+        success: false,
+        error: "Only receptionist or manager can generate VNPay payment URL",
+        code: "FORBIDDEN_ROLE",
+      });
+      return;
+    }
+
+    const invoiceId = Number(req.params.id);
+    if (!invoiceId || isNaN(invoiceId)) {
+      res.status(400).json({
+        success: false,
+        error: "Invalid invoice ID",
+        code: "INVALID_INVOICE_ID",
+      });
+      return;
+    }
+
+    // Verify invoice exists and is unpaid
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: invoiceId },
+    });
+
+    if (!invoice) {
+      res.status(404).json({
+        success: false,
+        error: "Invoice not found",
+        code: "INVOICE_NOT_FOUND",
+      });
+      return;
+    }
+
+    if (invoice.status !== "unpaid") {
+      res.status(400).json({
+        success: false,
+        error: `Invoice cannot be paid: current status is '${invoice.status}'`,
+        code: "INVALID_INVOICE_STATUS",
+      });
+      return;
+    }
+
+    // Check if there is already an active pending payment for this invoice
+    const pendingPayment = await prisma.payment.findFirst({
+      where: {
+        invoiceId: invoiceId,
+        status: "pending",
+      },
+    });
+
+    if (pendingPayment) {
+      res.status(400).json({
+        success: false,
+        error: "There is already a pending payment for this invoice",
+        code: "PENDING_PAYMENT_EXISTS",
+      });
+      return;
+    }
+
+    // Create payment record
+    const payment = await prisma.payment.create({
+      data: {
+        invoiceId: invoiceId,
+        method: "vnpay",
+        amount: invoice.total,
+        status: "pending",
+      },
+    });
+
+    // Client IP Address parsing
+    const ipAddr = (req.headers["x-forwarded-for"] as string) || req.socket.remoteAddress || "127.0.0.1";
+    let ipAddress = Array.isArray(ipAddr) ? ipAddr[0] : ipAddr;
+    if (ipAddress.includes(",")) {
+      ipAddress = ipAddress.split(",")[0].trim();
+    }
+    if (ipAddress === "::1" || ipAddress === "::ffff:127.0.0.1") {
+      ipAddress = "127.0.0.1";
+    }
+
+    const returnUrl = process.env.VNPAY_RETURN_URL || `${process.env.FRONTEND_URL || "http://localhost:3000"}/payment/vnpay-return`;
+
+    const paymentUrl = createPaymentUrl({
+      invoiceId: invoiceId,
+      amount: Number(invoice.total),
+      orderInfo: `Thanh toan hoa don #${invoiceId}`,
+      ipAddr: ipAddress,
+      returnUrl: returnUrl,
+    });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        paymentUrl,
+        paymentId: payment.id,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * GET /api/payments/vnpay/return
+ * Xử lý kết quả redirect về từ VNPay (Public route)
+ */
+export async function handleVnpayReturn(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    const verifyResult = verifyReturnUrl(req.query);
+
+    const txnRef = verifyResult.transactionRef;
+    const invoiceId = Number(txnRef.split("_")[0]);
+
+    if (!verifyResult.isValid) {
+      res.redirect(`${frontendUrl}/payment/failed?error=checksum_failed`);
+      return;
+    }
+
+    if (verifyResult.responseCode !== "00") {
+      // Cập nhật payment thành failed
+      try {
+        await prisma.payment.updateMany({
+          where: {
+            invoiceId: invoiceId,
+            method: "vnpay",
+            status: "pending",
+          },
+          data: {
+            status: "failed",
+            transactionId: verifyResult.transactionRef,
+            gatewayResponse: req.query as any,
+          },
+        });
+      } catch (updateError) {
+        console.error("Failed to update payment status to failed in return:", updateError);
+      }
+
+      res.redirect(`${frontendUrl}/payment/failed?invoiceId=${invoiceId}`);
+      return;
+    }
+
+    // Success -> Update database in transaction
+    const result = await prisma.$transaction(async (tx: any) => {
+      const invoice = await tx.invoice.findUnique({
+        where: { id: invoiceId },
+        include: {
+          session: {
+            include: {
+              table: true,
+            },
+          },
+        },
+      });
+
+      if (!invoice) {
+        throw new Error("Invoice not found");
+      }
+
+      if (invoice.status === "paid") {
+        return invoice;
+      }
+
+      // 1. Update payment record
+      const payment = await tx.payment.findFirst({
+        where: {
+          invoiceId: invoiceId,
+          method: "vnpay",
+          status: "pending",
+        },
+      });
+
+      if (payment) {
+        await tx.payment.update({
+          where: { id: payment.id },
+          data: {
+            status: "success",
+            transactionId: verifyResult.transactionRef,
+            gatewayResponse: req.query as any,
+          },
+        });
+      } else {
+        await tx.payment.create({
+          data: {
+            invoiceId: invoiceId,
+            method: "vnpay",
+            amount: invoice.total,
+            status: "success",
+            transactionId: verifyResult.transactionRef,
+            gatewayResponse: req.query as any,
+          },
+        });
+      }
+
+      // 2. Update invoice status
+      const updatedInvoice = await tx.invoice.update({
+        where: { id: invoiceId },
+        data: {
+          status: "paid",
+          paidAt: new Date(),
+        },
+        include: {
+          session: {
+            include: {
+              table: true,
+            },
+          },
+        },
+      });
+
+      // 3. Close table session
+      await tx.tableSession.update({
+        where: { id: invoice.session.id },
+        data: {
+          status: "closed",
+          closedAt: new Date(),
+        },
+      });
+
+      // 4. Update table status to cleaning
+      await tx.table.update({
+        where: { id: invoice.session.table.id },
+        data: {
+          status: "cleaning",
+        },
+      });
+
+      return updatedInvoice;
+    }, {
+      maxWait: 10000,
+      timeout: 20000,
+    });
+
+    // Emit Socket.IO event
+    try {
+      const socketService = getSocketService();
+      socketService.emitToReceptionists("invoice-paid", {
+        invoiceId: result.id,
+        tableId: result.session.table.id,
+        tableNumber: result.session.table.tableNumber,
+        amount: result.total,
+        paidAt: result.paidAt,
+      });
+      socketService.emitToReceptionists("table-status-changed", {
+        tableId: result.session.table.id,
+        status: "cleaning",
+      });
+    } catch (socketError) {
+      console.error("Socket.IO emit error in return redirect handler:", socketError);
+    }
+
+    res.redirect(`${frontendUrl}/payment/success?invoiceId=${invoiceId}`);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * POST /api/payments/vnpay/ipn
+ * Xử lý server-to-server callback từ VNPay (Public route)
+ */
+export async function handleVnpayIpn(
+  req: Request,
+  res: Response,
+): Promise<void> {
+  try {
+    const params = req.method === "POST" ? req.body : req.query;
+    const verifyResult = verifyIpn(params);
+
+    if (!verifyResult.isValid) {
+      res.json({ RspCode: "97", Message: "Checksum failed" });
+      return;
+    }
+
+    const txnRef = verifyResult.transactionRef;
+    const invoiceId = Number(txnRef.split("_")[0]);
+
+    if (!invoiceId || isNaN(invoiceId)) {
+      res.json({ RspCode: "01", Message: "Order not found" });
+      return;
+    }
+
+    const invoice = await prisma.invoice.findUnique({
+      where: { id: invoiceId },
+    });
+
+    if (!invoice) {
+      res.json({ RspCode: "01", Message: "Order not found" });
+      return;
+    }
+
+    // Kiểm tra số tiền nhận được (đã chia 100) vs total hóa đơn
+    if (Math.abs(Number(invoice.total) - verifyResult.amount) > 1) {
+      res.json({ RspCode: "04", Message: "Invalid amount" });
+      return;
+    }
+
+    if (invoice.status === "paid") {
+      res.json({ RspCode: "02", Message: "Order already confirmed" });
+      return;
+    }
+
+    if (verifyResult.responseCode !== "00") {
+      // Giao dịch thất bại
+      try {
+        await prisma.payment.updateMany({
+          where: {
+            invoiceId: invoiceId,
+            method: "vnpay",
+            status: "pending",
+          },
+          data: {
+            status: "failed",
+            transactionId: verifyResult.transactionRef,
+            gatewayResponse: params as any,
+          },
+        });
+      } catch (updateError) {
+        console.error("Failed to update payment status to failed in IPN:", updateError);
+      }
+
+      res.json({ RspCode: "00", Message: "Confirm Success" });
+      return;
+    }
+
+    // Giao dịch thành công -> Xử lý database
+    const result = await prisma.$transaction(async (tx: any) => {
+      const currentInvoice = await tx.invoice.findUnique({
+        where: { id: invoiceId },
+        include: {
+          session: {
+            include: {
+              table: true,
+            },
+          },
+        },
+      });
+
+      if (!currentInvoice) {
+        throw new Error("Invoice not found");
+      }
+
+      if (currentInvoice.status === "paid") {
+        return currentInvoice;
+      }
+
+      // 1. Update payment
+      const payment = await tx.payment.findFirst({
+        where: {
+          invoiceId: invoiceId,
+          method: "vnpay",
+          status: "pending",
+        },
+      });
+
+      if (payment) {
+        await tx.payment.update({
+          where: { id: payment.id },
+          data: {
+            status: "success",
+            transactionId: verifyResult.transactionRef,
+            gatewayResponse: params as any,
+          },
+        });
+      } else {
+        await tx.payment.create({
+          data: {
+            invoiceId: invoiceId,
+            method: "vnpay",
+            amount: currentInvoice.total,
+            status: "success",
+            transactionId: verifyResult.transactionRef,
+            gatewayResponse: params as any,
+          },
+        });
+      }
+
+      // 2. Update invoice status
+      const updatedInvoice = await tx.invoice.update({
+        where: { id: invoiceId },
+        data: {
+          status: "paid",
+          paidAt: new Date(),
+        },
+        include: {
+          session: {
+            include: {
+              table: true,
+            },
+          },
+        },
+      });
+
+      // 3. Close table session
+      await tx.tableSession.update({
+        where: { id: currentInvoice.session.id },
+        data: {
+          status: "closed",
+          closedAt: new Date(),
+        },
+      });
+
+      // 4. Update table status to cleaning
+      await tx.table.update({
+        where: { id: currentInvoice.session.table.id },
+        data: {
+          status: "cleaning",
+        },
+      });
+
+      return updatedInvoice;
+    }, {
+      maxWait: 10000,
+      timeout: 20000,
+    });
+
+    // Emit Socket.IO event
+    try {
+      const socketService = getSocketService();
+      socketService.emitToReceptionists("invoice-paid", {
+        invoiceId: result.id,
+        tableId: result.session.table.id,
+        tableNumber: result.session.table.tableNumber,
+        amount: result.total,
+        paidAt: result.paidAt,
+      });
+      socketService.emitToReceptionists("table-status-changed", {
+        tableId: result.session.table.id,
+        status: "cleaning",
+      });
+    } catch (socketError) {
+      console.error("Socket.IO emit error in IPN handler:", socketError);
+    }
+
+    res.json({ RspCode: "00", Message: "Confirm Success" });
+  } catch (error) {
+    console.error("VNPay IPN error:", error);
+    res.json({ RspCode: "99", Message: "Unknow error" });
   }
 }

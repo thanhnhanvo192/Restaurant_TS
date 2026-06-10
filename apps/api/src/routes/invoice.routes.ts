@@ -4,6 +4,9 @@ import {
   getInvoice,
   getSessionInvoice,
   payByCash,
+  createVnpayPayment,
+  handleVnpayReturn,
+  handleVnpayIpn,
 } from "../controllers/invoice.controller";
 import { verifyStaffToken } from "../middlewares/auth.middleware";
 
@@ -67,5 +70,24 @@ router.post("/:id/pay/cash", verifyStaffToken, verifyReceptionistOrManager, payB
  * Must be after more specific routes
  */
 router.get("/:id", verifyStaffToken, getInvoice);
+
+/**
+ * POST /api/invoices/:id/pay/vnpay
+ * Process VNPay payment creation
+ * Receptionist or Manager
+ */
+router.post("/:id/pay/vnpay", verifyStaffToken, verifyReceptionistOrManager, createVnpayPayment);
+
+/**
+ * GET /vnpay/return (Mapped to /api/payments/vnpay/return via index.ts)
+ * Public route for VNPay redirect return
+ */
+router.get("/vnpay/return", handleVnpayReturn);
+
+/**
+ * POST /vnpay/ipn (Mapped to /api/payments/vnpay/ipn via index.ts)
+ * Public route for VNPay IPN callback
+ */
+router.post("/vnpay/ipn", handleVnpayIpn);
 
 export default router;

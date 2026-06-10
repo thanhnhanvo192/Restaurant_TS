@@ -26,7 +26,8 @@ import {
   CheckCircle2, 
   ChevronRight, 
   AlertTriangle,
-  ArrowLeft
+  ArrowLeft,
+  CreditCard,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Table, Invoice } from "@/types";
@@ -269,6 +270,51 @@ function InvoicePageContent() {
     }
   };
 
+  // Handle pay by VNPay
+  const [isVnpayLoading, setIsVnpayLoading] = useState(false);
+
+  const handlePayByVnpay = async () => {
+    if (!invoice) return;
+
+    setIsVnpayLoading(true);
+    try {
+      const response = await api.post(`/api/invoices/${invoice.id}/pay/vnpay`);
+      if (response.data && response.data.success && response.data.data.paymentUrl) {
+        const { paymentUrl } = response.data.data;
+        toast.info("Đang mở trang thanh toán VNPay...");
+        window.open(paymentUrl, "_blank");
+      } else {
+        toast.error("Không tạo được link thanh toán VNPay.");
+      }
+    } catch (error: any) {
+      console.error(error);
+      const errMsg = error.response?.data?.error || "Lỗi xử lý thanh toán VNPay.";
+      toast.error(errMsg);
+    } finally {
+      setIsVnpayLoading(false);
+    }
+  };
+
+  // Real-time socket listener for payment notifications
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket || !invoice || isPaid) return;
+
+    const handleInvoicePaid = (data: { invoiceId: number; amount: number; paidAt: string }) => {
+      if (data.invoiceId === invoice.id) {
+        setInvoice((prev) => prev ? { ...prev, status: "paid", paidAt: data.paidAt } : null);
+        setIsPaid(true);
+        toast.success("Khách hàng đã thanh toán hóa đơn thành công qua VNPay!");
+      }
+    };
+
+    socket.on("invoice-paid", handleInvoicePaid);
+
+    return () => {
+      socket.off("invoice-paid", handleInvoicePaid);
+    };
+  }, [invoice, isPaid]);
+
   const handlePrint = () => {
     window.print();
   };
@@ -422,20 +468,37 @@ function InvoicePageContent() {
                     </div>
                   </div>
 
-                  <Button
-                    onClick={handlePayByCash}
-                    disabled={isSubmitting}
-                    className="w-full bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-bold py-5 rounded-xl text-xs cursor-pointer shadow-lg shadow-emerald-500/5"
-                  >
-                    {isSubmitting ? (
-                      <Loader2 className="w-4 h-4 animate-spin mr-1" />
-                    ) : (
-                      <>
-                        <DollarSign className="w-4 h-4 mr-1" />
-                        Xác nhận Thanh toán tiền mặt
-                      </>
-                    )}
-                  </Button>
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      onClick={handlePayByCash}
+                      disabled={isSubmitting || isVnpayLoading}
+                      className="w-full bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-bold py-5 rounded-xl text-xs cursor-pointer shadow-lg shadow-emerald-500/5"
+                    >
+                      {isSubmitting ? (
+                        <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                      ) : (
+                        <>
+                          <DollarSign className="w-4 h-4 mr-1" />
+                          Xác nhận Thanh toán tiền mặt
+                        </>
+                      )}
+                    </Button>
+
+                    <Button
+                      onClick={handlePayByVnpay}
+                      disabled={isSubmitting || isVnpayLoading}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-5 rounded-xl text-xs cursor-pointer shadow-lg shadow-blue-600/5 flex items-center justify-center gap-1.5"
+                    >
+                      {isVnpayLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <CreditCard className="w-4 h-4" />
+                          Thanh toán VNPay (Sandbox)
+                        </>
+                      )}
+                    </Button>
+                  </div>
 
                   <Button
                     onClick={() => setIsCreated(false)}

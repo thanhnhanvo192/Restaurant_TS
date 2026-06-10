@@ -61,6 +61,7 @@ app.use("/api/menu", menuRoutes);
 app.use("/api/reservations", reservationRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/invoices", invoiceRoutes);
+app.use("/api/payments", invoiceRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/stats", statsRoutes);
 app.use("/api", tableSessionRoutes);
