@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Reservation, ReservationStatus } from "@/types";
+import { Pagination } from "@/components/ui/pagination";
 
 export default function ReceptionistReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -41,6 +42,10 @@ export default function ReceptionistReservationsPage() {
   // Search & Filter state
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDate, setFilterDate] = useState("");
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Dialog actions
   const [selectedRes, setSelectedRes] = useState<Reservation | null>(null);
@@ -70,6 +75,11 @@ export default function ReceptionistReservationsPage() {
   useEffect(() => {
     fetchReservations(true);
   }, [fetchReservations]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterDate, activeTab]);
 
   // Socket IO Real-time integration
   useEffect(() => {
@@ -370,118 +380,131 @@ export default function ReceptionistReservationsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {filteredReservations.map((res) => (
-            <Card
-              key={res.id}
-              className={`border-zinc-850 bg-zinc-900/20 backdrop-blur-xl relative overflow-hidden transition-all duration-300 hover:bg-zinc-900/30 ${
-                res.status === "pending" ? "border-l-4 border-l-amber-500" : ""
-              }`}
-            >
-              <CardContent className="p-5">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  {/* Left block: Core details */}
-                  <div className="space-y-2.5 flex-1">
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      <span className="text-xs font-bold text-zinc-400">Mã: #{res.id}</span>
-                      {getStatusBadge(res.status)}
-                      <span className="text-[11px] text-zinc-550">
-                        Đặt ngày: {new Date(res.createdAt).toLocaleString("vi-VN")}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-2 gap-x-4 text-xs">
-                      {/* Customer Info */}
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1.5 text-zinc-300 font-semibold text-sm">
-                          <User className="h-3.5 w-3.5 text-amber-500" />
-                          <span>{res.user?.name || "Khách Vãng Lai"}</span>
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4">
+            {filteredReservations
+              .slice((currentPage - 1) * pageSize, currentPage * pageSize)
+              .map((res) => (
+                <Card
+                  key={res.id}
+                  className={`border-zinc-850 bg-zinc-900/20 backdrop-blur-xl relative overflow-hidden transition-all duration-300 hover:bg-zinc-900/30 ${
+                    res.status === "pending" ? "border-l-4 border-l-amber-500" : ""
+                  }`}
+                >
+                  <CardContent className="p-5">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                      {/* Left block: Core details */}
+                      <div className="space-y-2.5 flex-1">
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          <span className="text-xs font-bold text-zinc-400">Mã: #{res.id}</span>
+                          {getStatusBadge(res.status)}
+                          <span className="text-[11px] text-zinc-550">
+                            Đặt ngày: {new Date(res.createdAt).toLocaleString("vi-VN")}
+                          </span>
                         </div>
-                        {res.user?.phone && (
-                          <div className="flex items-center gap-1.5 text-zinc-400 text-xs">
-                            <Phone className="h-3 w-3 text-zinc-500" />
-                            <span>{res.user.phone}</span>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-2 gap-x-4 text-xs">
+                          {/* Customer Info */}
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1.5 text-zinc-300 font-semibold text-sm">
+                              <User className="h-3.5 w-3.5 text-amber-500" />
+                              <span>{res.user?.name || "Khách Vãng Lai"}</span>
+                            </div>
+                            {res.user?.phone && (
+                              <div className="flex items-center gap-1.5 text-zinc-400 text-xs">
+                                <Phone className="h-3 w-3 text-zinc-500" />
+                                <span>{res.user.phone}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* DateTime Reservation */}
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1.5 text-zinc-300">
+                              <CalendarIcon className="h-3.5 w-3.5 text-amber-500" />
+                              <span>Ngày: <strong>{formatDate(res.reservedDate)}</strong></span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-zinc-300">
+                              <Clock className="h-3.5 w-3.5 text-amber-500" />
+                              <span>Giờ: <strong>{formatTime(res.reservedTime)}</strong></span>
+                            </div>
+                          </div>
+
+                          {/* Table / Guests */}
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1.5 text-zinc-300">
+                              <Users className="h-3.5 w-3.5 text-amber-500" />
+                              <span>Số khách: <strong className="text-white">{res.guestCount}</strong> người</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-zinc-300">
+                              <span className="inline-block w-3.5 h-3.5 rounded-full bg-zinc-800 text-[9px] font-bold flex items-center justify-center text-amber-500 border border-zinc-700">
+                                B
+                              </span>
+                              <span>
+                                Bàn: <strong className="text-white">{res.table?.tableNumber || "--"}</strong>
+                                {res.table?.location && ` (${res.table.location})`}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Notes block */}
+                        {res.customerNote && (
+                          <div className="text-[11px] text-zinc-400 italic bg-zinc-950/40 p-2.5 rounded-lg border border-zinc-900 max-w-2xl">
+                            Khách ghi chú: "{res.customerNote}"
+                          </div>
+                        )}
+                        {res.staffNote && (
+                          <div className="text-[11px] text-amber-400 bg-amber-500/5 p-2.5 rounded-lg border border-amber-500/10 max-w-2xl">
+                            Nhân viên ghi chú / Lý do hủy: "{res.staffNote}"
+                            {res.confirmedBy && ` (Xử lý bởi: ${res.confirmedBy.name})`}
                           </div>
                         )}
                       </div>
 
-                      {/* DateTime Reservation */}
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1.5 text-zinc-300">
-                          <CalendarIcon className="h-3.5 w-3.5 text-amber-500" />
-                          <span>Ngày: <strong>{formatDate(res.reservedDate)}</strong></span>
+                      {/* Right block: Action buttons */}
+                      {res.status === "pending" && (
+                        <div className="flex sm:flex-row lg:flex-col gap-2 shrink-0 pt-3 lg:pt-0 border-t border-zinc-800/40 lg:border-t-0 lg:pl-4">
+                          <Button
+                            onClick={() => openActionDialog(res, "confirm")}
+                            className="bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-bold text-xs h-9 px-4 rounded-lg flex items-center gap-1.5 cursor-pointer shadow-md shadow-emerald-500/5"
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" /> Xác nhận
+                          </Button>
+                          <Button
+                            onClick={() => openActionDialog(res, "cancel")}
+                            variant="destructive"
+                            className="text-xs h-9 px-4 rounded-lg flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <XCircle className="h-3.5 w-3.5" /> Hủy yêu cầu
+                          </Button>
                         </div>
-                        <div className="flex items-center gap-1.5 text-zinc-300">
-                          <Clock className="h-3.5 w-3.5 text-amber-500" />
-                          <span>Giờ: <strong>{formatTime(res.reservedTime)}</strong></span>
+                      )}
+                      {res.status === "confirmed" && (
+                        <div className="flex sm:flex-row lg:flex-col gap-2 shrink-0 pt-3 lg:pt-0 border-t border-zinc-800/40 lg:border-t-0 lg:pl-4">
+                          <Button
+                            onClick={() => openActionDialog(res, "cancel")}
+                            variant="destructive"
+                            className="text-xs h-9 px-4 rounded-lg flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <XCircle className="h-3.5 w-3.5" /> Hủy đặt bàn
+                          </Button>
                         </div>
-                      </div>
-
-                      {/* Table / Guests */}
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1.5 text-zinc-300">
-                          <Users className="h-3.5 w-3.5 text-amber-500" />
-                          <span>Số khách: <strong className="text-white">{res.guestCount}</strong> người</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-zinc-300">
-                          <span className="inline-block w-3.5 h-3.5 rounded-full bg-zinc-800 text-[9px] font-bold flex items-center justify-center text-amber-500 border border-zinc-700">
-                            B
-                          </span>
-                          <span>
-                            Bàn: <strong className="text-white">{res.table?.tableNumber || "--"}</strong>
-                            {res.table?.location && ` (${res.table.location})`}
-                          </span>
-                        </div>
-                      </div>
+                      )}
                     </div>
+                  </CardContent>
+                </Card>
+              ))}
+          </div>
 
-                    {/* Notes block */}
-                    {res.customerNote && (
-                      <div className="text-[11px] text-zinc-400 italic bg-zinc-950/40 p-2.5 rounded-lg border border-zinc-900 max-w-2xl">
-                        Khách ghi chú: "{res.customerNote}"
-                      </div>
-                    )}
-                    {res.staffNote && (
-                      <div className="text-[11px] text-amber-400 bg-amber-500/5 p-2.5 rounded-lg border border-amber-500/10 max-w-2xl">
-                        Nhân viên ghi chú / Lý do hủy: "{res.staffNote}"
-                        {res.confirmedBy && ` (Xử lý bởi: ${res.confirmedBy.name})`}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Right block: Action buttons */}
-                  {res.status === "pending" && (
-                    <div className="flex sm:flex-row lg:flex-col gap-2 shrink-0 pt-3 lg:pt-0 border-t border-zinc-800/40 lg:border-t-0 lg:pl-4">
-                      <Button
-                        onClick={() => openActionDialog(res, "confirm")}
-                        className="bg-emerald-500 hover:bg-emerald-600 text-zinc-950 font-bold text-xs h-9 px-4 rounded-lg flex items-center gap-1.5 cursor-pointer shadow-md shadow-emerald-500/5"
-                      >
-                        <CheckCircle2 className="h-3.5 w-3.5" /> Xác nhận
-                      </Button>
-                      <Button
-                        onClick={() => openActionDialog(res, "cancel")}
-                        variant="destructive"
-                        className="text-xs h-9 px-4 rounded-lg flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <XCircle className="h-3.5 w-3.5" /> Hủy yêu cầu
-                      </Button>
-                    </div>
-                  )}
-                  {res.status === "confirmed" && (
-                    <div className="flex sm:flex-row lg:flex-col gap-2 shrink-0 pt-3 lg:pt-0 border-t border-zinc-800/40 lg:border-t-0 lg:pl-4">
-                      <Button
-                        onClick={() => openActionDialog(res, "cancel")}
-                        variant="destructive"
-                        className="text-xs h-9 px-4 rounded-lg flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <XCircle className="h-3.5 w-3.5" /> Hủy đặt bàn
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(filteredReservations.length / pageSize)}
+            onPageChange={setCurrentPage}
+            pageSize={pageSize}
+            onPageSizeChange={setPageSize}
+            totalItems={filteredReservations.length}
+          />
         </div>
       )}
 

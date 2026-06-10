@@ -29,12 +29,17 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { MenuCategory, MenuItem } from "@/types";
+import { Pagination } from "@/components/ui/pagination";
 
 export default function ManagerMenuPage() {
   const [activeTab, setActiveTab] = useState<"categories" | "items">("items");
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [items, setItems] = useState<MenuItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Categories state
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -80,6 +85,11 @@ export default function ManagerMenuPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategoryFilter, activeTab]);
 
   // --- Categories CRUD ---
   const handleAddCategory = async (e: React.FormEvent) => {
@@ -460,84 +470,94 @@ export default function ManagerMenuPage() {
                       </td>
                     </tr>
                   ) : (
-                    filteredItems.map((item) => {
-                      const itemCat = categories.find((c) => c.id === item.categoryId);
-                      const isAvailable = item.status === "available";
+                    filteredItems
+                      .slice((currentPage - 1) * pageSize, currentPage * pageSize)
+                      .map((item) => {
+                        const itemCat = categories.find((c) => c.id === item.categoryId);
+                        const isAvailable = item.status === "available";
 
-                      return (
-                        <tr key={item.id} className="hover:bg-zinc-850/20 transition-colors">
-                          <td className="p-4 pl-6">
-                            <div className="flex items-center gap-3">
-                              {item.imageUrl ? (
-                                <img
-                                  src={item.imageUrl.startsWith("http") ? item.imageUrl : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${item.imageUrl}`}
-                                  alt={item.name}
-                                  className="w-10 h-10 rounded-lg object-cover border border-zinc-800 bg-zinc-950"
-                                />
-                              ) : (
-                                <div className="w-10 h-10 rounded-lg bg-zinc-950 border border-zinc-850 flex items-center justify-center text-zinc-600">
-                                  <ImageIcon className="w-4 h-4" />
-                                </div>
-                              )}
-                              <div className="min-w-0">
-                                <span className="font-bold text-white block truncate">{item.name}</span>
-                                {item.description && (
-                                  <span className="text-xs text-zinc-400 block truncate max-w-[250px]">{item.description}</span>
+                        return (
+                          <tr key={item.id} className="hover:bg-zinc-850/20 transition-colors">
+                            <td className="p-4 pl-6">
+                              <div className="flex items-center gap-3">
+                                {item.imageUrl ? (
+                                  <img
+                                    src={item.imageUrl.startsWith("http") ? item.imageUrl : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${item.imageUrl}`}
+                                    alt={item.name}
+                                    className="w-10 h-10 rounded-lg object-cover border border-zinc-800 bg-zinc-950"
+                                  />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-lg bg-zinc-950 border border-zinc-850 flex items-center justify-center text-zinc-600">
+                                    <ImageIcon className="w-4 h-4" />
+                                  </div>
                                 )}
+                                <div className="min-w-0">
+                                  <span className="font-bold text-white block truncate">{item.name}</span>
+                                  {item.description && (
+                                    <span className="text-xs text-zinc-400 block truncate max-w-[250px]">{item.description}</span>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          </td>
-                          <td className="p-4 text-zinc-300 font-medium">
-                            {itemCat?.name || `ID: ${item.categoryId}`}
-                          </td>
-                          <td className="p-4 text-zinc-100 font-bold">
-                            {Number(item.price).toLocaleString("vi-VN")} đ
-                          </td>
-                          <td className="p-4">
-                            <Badge
-                              onClick={() => handleToggleItemStatus(item)}
-                              className={`px-2 py-0.5 text-[10px] font-bold border capitalize cursor-pointer select-none transition ${
-                                isAvailable
-                                  ? "bg-green-500/10 text-green-400 border-green-500/25 hover:bg-green-500/20"
-                                  : "bg-red-500/10 text-red-400 border-red-500/25 hover:bg-red-500/20"
-                              }`}
-                            >
-                              {isAvailable ? "Đang bán" : "Ngưng bán"}
-                            </Badge>
-                          </td>
-                          <td className="p-4 text-zinc-400 text-xs">
-                            {item.sortOrder}
-                          </td>
-                          <td className="p-4 pr-6 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <Button
-                                size="icon-sm"
-                                variant="outline"
-                                onClick={() => handleOpenEditItem(item)}
-                                className="border-zinc-800 hover:bg-zinc-800/60 text-zinc-400 hover:text-zinc-200 h-8 w-8 rounded-lg cursor-pointer"
-                                title="Chỉnh sửa món"
+                            </td>
+                            <td className="p-4 text-zinc-300 font-medium">
+                              {itemCat?.name || `ID: ${item.categoryId}`}
+                            </td>
+                            <td className="p-4 text-zinc-100 font-bold">
+                              {Number(item.price).toLocaleString("vi-VN")} đ
+                            </td>
+                            <td className="p-4">
+                              <Badge
+                                onClick={() => handleToggleItemStatus(item)}
+                                className={`px-2 py-0.5 text-[10px] font-bold border capitalize cursor-pointer select-none transition ${
+                                  isAvailable
+                                    ? "bg-green-500/10 text-green-400 border-green-500/25 hover:bg-green-500/20"
+                                    : "bg-red-500/10 text-red-400 border-red-500/25 hover:bg-red-500/20"
+                                }`}
                               >
-                                <Edit className="w-3.5 h-3.5" />
-                              </Button>
-                              <Button
-                                size="icon-sm"
-                                variant="outline"
-                                onClick={() => handleDeleteItem(item.id)}
-                                className="border-zinc-850 hover:bg-red-950/20 text-zinc-400 hover:text-red-400 hover:border-red-950/50 h-8 w-8 rounded-lg cursor-pointer"
-                                title="Ngưng bán / Xoá"
-                              >
-                                <Trash className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
+                                {isAvailable ? "Đang bán" : "Ngưng bán"}
+                              </Badge>
+                            </td>
+                            <td className="p-4 text-zinc-400 text-xs">
+                              {item.sortOrder}
+                            </td>
+                            <td className="p-4 pr-6 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  size="icon-sm"
+                                  variant="outline"
+                                  onClick={() => handleOpenEditItem(item)}
+                                  className="border-zinc-800 hover:bg-zinc-800/60 text-zinc-400 hover:text-zinc-200 h-8 w-8 rounded-lg cursor-pointer"
+                                  title="Chỉnh sửa món"
+                                >
+                                  <Edit className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  size="icon-sm"
+                                  variant="outline"
+                                  onClick={() => handleDeleteItem(item.id)}
+                                  className="border-zinc-850 hover:bg-red-950/20 text-zinc-400 hover:text-red-400 hover:border-red-950/50 h-8 w-8 rounded-lg cursor-pointer"
+                                  title="Ngưng bán / Xoá"
+                                >
+                                  <Trash className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
                   )}
                 </tbody>
               </table>
             </div>
           </Card>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(filteredItems.length / pageSize)}
+            onPageChange={setCurrentPage}
+            pageSize={pageSize}
+            onPageSizeChange={setPageSize}
+            totalItems={filteredItems.length}
+          />
         </div>
       )}
 

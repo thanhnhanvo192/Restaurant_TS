@@ -28,6 +28,7 @@ import {
   Plus,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Pagination } from "@/components/ui/pagination";
 
 interface Table {
   id: number;
@@ -55,6 +56,10 @@ export default function ReservationsPage() {
   const [customerName, setCustomerName] = useState("");
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [isLoadingList, setIsLoadingList] = useState(true);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Active Tab: 'list' or 'new'
   const [activeTab, setActiveTab] = useState<"list" | "new">("list");
@@ -101,6 +106,11 @@ export default function ReservationsPage() {
 
     fetchMyReservations();
   }, []);
+
+  // Reset page when tab changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab]);
 
   // Listen to real-time events for this customer
   useEffect(() => {
@@ -403,67 +413,79 @@ export default function ReservationsPage() {
               </Card>
             ) : (
               <div className="space-y-3">
-                {reservations.map((res) => (
-                  <Card
-                    key={res.id}
-                    className="border-zinc-905 bg-zinc-900/20 backdrop-blur-xl relative overflow-hidden"
-                  >
-                    <CardContent className="p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1 text-[11px] text-zinc-400 font-semibold">
-                          <span>Mã đặt bàn:</span>
-                          <span className="text-zinc-200">#{res.id}</span>
-                        </div>
-                        {getStatusBadge(res.status)}
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-y-2 text-xs pt-1 border-t border-zinc-900/60">
-                        <div className="flex items-center gap-1.5 text-zinc-400">
-                          <Calendar className="size-3.5 text-amber-500" />
-                          <span className="text-zinc-200 font-medium">{formatDate(res.reservedDate)}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-zinc-400">
-                          <Clock className="size-3.5 text-amber-500" />
-                          <span className="text-zinc-200 font-medium">{formatTime(res.reservedTime)}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-zinc-400 col-span-2">
-                          <Users className="size-3.5 text-amber-500" />
-                          <span className="text-zinc-200">
-                            Số khách: <strong className="text-zinc-100">{res.guestCount}</strong> người
-                          </span>
-                        </div>
-                        {res.table && (
-                          <div className="flex items-center gap-1.5 text-zinc-400 col-span-2">
-                            <span className="inline-block w-3.5 h-3.5 rounded-full bg-zinc-800 text-[9px] font-bold flex items-center justify-center text-amber-500 border border-zinc-700">
-                              B
-                            </span>
-                            <span className="text-zinc-200">
-                              Bàn số: <strong className="text-zinc-100">{res.table.tableNumber}</strong> (Sức chứa {res.table.capacity} • {res.table.location || "Sảnh chính"})
-                            </span>
+                <div className="space-y-3">
+                  {reservations
+                    .slice((currentPage - 1) * pageSize, currentPage * pageSize)
+                    .map((res) => (
+                      <Card
+                        key={res.id}
+                        className="border-zinc-905 bg-zinc-900/20 backdrop-blur-xl relative overflow-hidden"
+                      >
+                        <CardContent className="p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1 text-[11px] text-zinc-400 font-semibold">
+                              <span>Mã đặt bàn:</span>
+                              <span className="text-zinc-200">#{res.id}</span>
+                            </div>
+                            {getStatusBadge(res.status)}
                           </div>
-                        )}
-                        {res.customerNote && (
-                          <div className="col-span-2 text-[11px] text-zinc-500 italic mt-0.5 bg-zinc-950/20 p-2 rounded-lg border border-zinc-900/50">
-                            Ghi chú: "{res.customerNote}"
-                          </div>
-                        )}
-                      </div>
 
-                      {res.status === "pending" && (
-                        <div className="flex justify-end pt-1">
-                          <Button
-                            onClick={() => handleCancelReservation(res.id)}
-                            variant="destructive"
-                            size="sm"
-                            className="text-xs h-7 px-3 rounded-lg flex items-center gap-1 border-0 cursor-pointer"
-                          >
-                            <XCircle className="size-3.5" /> Hủy đặt bàn
-                          </Button>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
+                          <div className="grid grid-cols-2 gap-y-2 text-xs pt-1 border-t border-zinc-900/60">
+                            <div className="flex items-center gap-1.5 text-zinc-400">
+                              <Calendar className="size-3.5 text-amber-500" />
+                              <span className="text-zinc-200 font-medium">{formatDate(res.reservedDate)}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-zinc-400">
+                              <Clock className="size-3.5 text-amber-500" />
+                              <span className="text-zinc-200 font-medium">{formatTime(res.reservedTime)}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-zinc-400 col-span-2">
+                              <Users className="size-3.5 text-amber-500" />
+                              <span className="text-zinc-200">
+                                Số khách: <strong className="text-zinc-100">{res.guestCount}</strong> người
+                              </span>
+                            </div>
+                            {res.table && (
+                              <div className="flex items-center gap-1.5 text-zinc-400 col-span-2">
+                                <span className="inline-block w-3.5 h-3.5 rounded-full bg-zinc-800 text-[9px] font-bold flex items-center justify-center text-amber-500 border border-zinc-700">
+                                  B
+                                </span>
+                                <span className="text-zinc-200">
+                                  Bàn số: <strong className="text-zinc-100">{res.table.tableNumber}</strong> (Sức chứa {res.table.capacity} • {res.table.location || "Sảnh chính"})
+                                </span>
+                              </div>
+                            )}
+                            {res.customerNote && (
+                              <div className="col-span-2 text-[11px] text-zinc-500 italic mt-0.5 bg-zinc-950/20 p-2 rounded-lg border border-zinc-900/50">
+                                Ghi chú: "{res.customerNote}"
+                              </div>
+                            )}
+                          </div>
+
+                          {res.status === "pending" && (
+                            <div className="flex justify-end pt-1">
+                              <Button
+                                onClick={() => handleCancelReservation(res.id)}
+                                variant="destructive"
+                                size="sm"
+                                className="text-xs h-7 px-3 rounded-lg flex items-center gap-1 border-0 cursor-pointer"
+                              >
+                                <XCircle className="size-3.5" /> Hủy đặt bàn
+                              </Button>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                </div>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={Math.ceil(reservations.length / pageSize)}
+                  onPageChange={setCurrentPage}
+                  pageSize={pageSize}
+                  onPageSizeChange={setPageSize}
+                  totalItems={reservations.length}
+                />
               </div>
             )}
           </div>

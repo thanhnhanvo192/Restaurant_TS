@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Table, TableStatus } from "@/types";
+import { Pagination } from "@/components/ui/pagination";
 
 export default function ManagerTablesPage() {
   const [tables, setTables] = useState<Table[]>([]);
@@ -35,6 +36,10 @@ export default function ManagerTablesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | TableStatus>("all");
   const [locationFilter, setLocationFilter] = useState<string>("all");
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Add/Edit Dialog State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -71,6 +76,11 @@ export default function ManagerTablesPage() {
   useEffect(() => {
     fetchTables();
   }, []);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, locationFilter]);
 
   // Open Create Dialog
   const handleOpenCreateDialog = () => {
@@ -367,110 +377,122 @@ export default function ManagerTablesPage() {
           </div>
         </div>
       ) : (
-        /* Tables Grid/Table */
-        <Card className="border-zinc-800 bg-zinc-900 shadow-md overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-zinc-800 bg-zinc-950/40 text-xs font-bold uppercase tracking-wider text-zinc-400">
-                  <th className="p-4 pl-6">Bàn ăn</th>
-                  <th className="p-4">Khu vực</th>
-                  <th className="p-4">Sức chứa</th>
-                  <th className="p-4">Trạng thái</th>
-                  <th className="p-4">Ghi chú</th>
-                  <th className="p-4 pr-6 text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-800/60">
-                {filteredTables.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="text-center p-12 text-zinc-500">
-                      Không tìm thấy bàn nào phù hợp.
-                    </td>
+        <div className="space-y-4">
+          {/* Tables Grid/Table */}
+          <Card className="border-zinc-800 bg-zinc-900 shadow-md overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm border-collapse">
+                <thead>
+                  <tr className="border-b border-zinc-800 bg-zinc-950/40 text-xs font-bold uppercase tracking-wider text-zinc-400">
+                    <th className="p-4 pl-6">Bàn ăn</th>
+                    <th className="p-4">Khu vực</th>
+                    <th className="p-4">Sức chứa</th>
+                    <th className="p-4">Trạng thái</th>
+                    <th className="p-4">Ghi chú</th>
+                    <th className="p-4 pr-6 text-right">Thao tác</th>
                   </tr>
-                ) : (
-                  filteredTables.map((table) => (
-                    <tr key={table.id} className="hover:bg-zinc-850/10 transition-colors">
-                      {/* Table Identity */}
-                      <td className="p-4 pl-6">
-                        <div className="flex items-center gap-3">
-                          <div className="flex w-9 h-9 items-center justify-center rounded-xl bg-zinc-800 border border-zinc-750 text-amber-500">
-                            <Armchair className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <span className="font-bold text-white block">Bàn {table.tableNumber}</span>
-                            <span className="text-[10px] text-zinc-500">ID Bàn: #{table.id}</span>
-                          </div>
-                        </div>
-                      </td>
-                      
-                      {/* Location */}
-                      <td className="p-4 text-zinc-300">
-                        <span className="flex items-center gap-1.5 text-xs">
-                          <MapPin className="w-3.5 h-3.5 text-zinc-500" />
-                          {table.location || "Sảnh chính"}
-                        </span>
-                      </td>
-
-                      {/* Capacity */}
-                      <td className="p-4 font-semibold text-white">
-                        {table.capacity} khách
-                      </td>
-
-                      {/* Status */}
-                      <td className="p-4">
-                        {getStatusBadge(table.status)}
-                      </td>
-
-                      {/* Notes */}
-                      <td className="p-4 text-zinc-400 text-xs max-w-xs truncate">
-                        {table.notes || <span className="text-zinc-650 italic">Không có</span>}
-                      </td>
-
-                      {/* Actions */}
-                      <td className="p-4 pr-6 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {/* QR Code Dialog Trigger */}
-                          <Button
-                            size="icon-sm"
-                            variant="outline"
-                            onClick={() => handleOpenQrDialog(table)}
-                            className="border-zinc-800 hover:bg-zinc-800/60 text-zinc-400 hover:text-amber-500 h-8 w-8 rounded-lg cursor-pointer"
-                            title="Tải mã QR"
-                          >
-                            <QrCode className="w-3.5 h-3.5" />
-                          </Button>
-
-                          {/* Edit Trigger */}
-                          <Button
-                            size="icon-sm"
-                            variant="outline"
-                            onClick={() => handleOpenEditDialog(table)}
-                            className="border-zinc-800 hover:bg-zinc-800/60 text-zinc-400 hover:text-zinc-200 h-8 w-8 rounded-lg cursor-pointer"
-                            title="Sửa thông tin"
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                          </Button>
-
-                          {/* Soft Delete Trigger */}
-                          <Button
-                            size="icon-sm"
-                            variant="outline"
-                            onClick={() => handleDeleteTable(table)}
-                            className="border-zinc-800 hover:bg-zinc-800/60 text-zinc-400 hover:text-red-400 h-8 w-8 rounded-lg cursor-pointer"
-                            title="Xóa bàn"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
+                </thead>
+                <tbody className="divide-y divide-zinc-800/60">
+                  {filteredTables.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="text-center p-12 text-zinc-500">
+                        Không tìm thấy bàn nào phù hợp.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+                  ) : (
+                    filteredTables
+                      .slice((currentPage - 1) * pageSize, currentPage * pageSize)
+                      .map((table) => (
+                        <tr key={table.id} className="hover:bg-zinc-850/10 transition-colors">
+                          {/* Table Identity */}
+                          <td className="p-4 pl-6">
+                            <div className="flex items-center gap-3">
+                              <div className="flex w-9 h-9 items-center justify-center rounded-xl bg-zinc-800 border border-zinc-750 text-amber-500">
+                                <Armchair className="w-5 h-5" />
+                              </div>
+                              <div>
+                                <span className="font-bold text-white block">Bàn {table.tableNumber}</span>
+                                <span className="text-[10px] text-zinc-500">ID Bàn: #{table.id}</span>
+                              </div>
+                            </div>
+                          </td>
+                          
+                          {/* Location */}
+                          <td className="p-4 text-zinc-300">
+                            <span className="flex items-center gap-1.5 text-xs">
+                              <MapPin className="w-3.5 h-3.5 text-zinc-500" />
+                              {table.location || "Sảnh chính"}
+                            </span>
+                          </td>
+
+                          {/* Capacity */}
+                          <td className="p-4 font-semibold text-white">
+                            {table.capacity} khách
+                          </td>
+
+                          {/* Status */}
+                          <td className="p-4">
+                            {getStatusBadge(table.status)}
+                          </td>
+
+                          {/* Notes */}
+                          <td className="p-4 text-zinc-400 text-xs max-w-xs truncate">
+                            {table.notes || <span className="text-zinc-650 italic">Không có</span>}
+                          </td>
+
+                          {/* Actions */}
+                          <td className="p-4 pr-6 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              {/* QR Code Dialog Trigger */}
+                              <Button
+                                size="icon-sm"
+                                variant="outline"
+                                onClick={() => handleOpenQrDialog(table)}
+                                className="border-zinc-800 hover:bg-zinc-800/60 text-zinc-400 hover:text-amber-500 h-8 w-8 rounded-lg cursor-pointer"
+                                title="Tải mã QR"
+                              >
+                                <QrCode className="w-3.5 h-3.5" />
+                              </Button>
+
+                              {/* Edit Trigger */}
+                              <Button
+                                size="icon-sm"
+                                variant="outline"
+                                onClick={() => handleOpenEditDialog(table)}
+                                className="border-zinc-800 hover:bg-zinc-800/60 text-zinc-400 hover:text-zinc-200 h-8 w-8 rounded-lg cursor-pointer"
+                                title="Sửa thông tin"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                              </Button>
+
+                              {/* Soft Delete Trigger */}
+                              <Button
+                                size="icon-sm"
+                                variant="outline"
+                                onClick={() => handleDeleteTable(table)}
+                                className="border-zinc-800 hover:bg-zinc-800/60 text-zinc-400 hover:text-red-400 h-8 w-8 rounded-lg cursor-pointer"
+                                title="Xóa bàn"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(filteredTables.length / pageSize)}
+            onPageChange={setCurrentPage}
+            pageSize={pageSize}
+            onPageSizeChange={setPageSize}
+            totalItems={filteredTables.length}
+          />
+        </div>
       )}
 
       {/* Add / Edit Table Dialog */}

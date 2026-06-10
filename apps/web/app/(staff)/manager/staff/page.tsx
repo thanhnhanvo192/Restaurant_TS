@@ -28,12 +28,17 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Staff, StaffRole } from "@/types";
+import { Pagination } from "@/components/ui/pagination";
 
 export default function ManagerStaffPage() {
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | StaffRole>("all");
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Dialog State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -64,6 +69,11 @@ export default function ManagerStaffPage() {
   useEffect(() => {
     fetchStaff();
   }, []);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, roleFilter]);
 
   const handleOpenCreateDialog = () => {
     setEditingStaff(null);
@@ -232,103 +242,114 @@ export default function ManagerStaffPage() {
           </div>
         </div>
       ) : (
-        /* Staff Table */
-        <Card className="border-zinc-800 bg-zinc-900 shadow-md overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-zinc-800 bg-zinc-950/40 text-xs font-bold uppercase tracking-wider text-zinc-400">
-                  <th className="p-4 pl-6">Họ và tên</th>
-                  <th className="p-4">Chức vụ</th>
-                  <th className="p-4">Thông tin liên lạc</th>
-                  <th className="p-4">Trạng thái</th>
-                  <th className="p-4">Ngày tạo</th>
-                  <th className="p-4 pr-6 text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-800/60">
-                {filteredStaff.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="text-center p-8 text-zinc-500">
-                      Không tìm thấy nhân viên nào phù hợp.
-                      Không tìm thấy nhân viên nào phù hợp.
-                    </td>
+        <div className="space-y-4">
+          {/* Staff Table */}
+          <Card className="border-zinc-800 bg-zinc-900 shadow-md overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm border-collapse">
+                <thead>
+                  <tr className="border-b border-zinc-800 bg-zinc-950/40 text-xs font-bold uppercase tracking-wider text-zinc-400">
+                    <th className="p-4 pl-6">Họ và tên</th>
+                    <th className="p-4">Chức vụ</th>
+                    <th className="p-4">Thông tin liên lạc</th>
+                    <th className="p-4">Trạng thái</th>
+                    <th className="p-4">Ngày tạo</th>
+                    <th className="p-4 pr-6 text-right">Thao tác</th>
                   </tr>
-                ) : (
-                  filteredStaff.map((staff) => (
-                    <tr key={staff.id} className={`hover:bg-zinc-850/20 transition-colors ${!staff.isActive ? "opacity-50" : ""}`}>
-                      <td className="p-4 pl-6">
-                        <div className="flex items-center gap-3">
-                          <div className="flex w-9 h-9 items-center justify-center rounded-xl bg-zinc-800 border border-zinc-750 text-amber-500 font-bold text-sm">
-                            {staff.name[0].toUpperCase()}
-                          </div>
-                          <div>
-                            <span className="font-bold text-white block">{staff.name}</span>
-                            <span className="text-[10px] text-zinc-500">Mã NV: #{staff.id}</span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        {getRoleBadge(staff.role)}
-                      </td>
-                      <td className="p-4 space-y-1">
-                        <div className="flex items-center gap-1.5 text-zinc-300 text-xs">
-                          <Mail className="w-3.5 h-3.5 text-zinc-500" />
-                          <span>{staff.email}</span>
-                        </div>
-                        {staff.phone && (
-                          <div className="flex items-center gap-1.5 text-zinc-300 text-xs">
-                            <Phone className="w-3.5 h-3.5 text-zinc-500" />
-                            <span>{staff.phone}</span>
-                          </div>
-                        )}
-                      </td>
-                      <td className="p-4">
-                        <Badge
-                          variant="secondary"
-                          className={`px-2 py-0.5 text-[10px] font-bold border capitalize ${
-                            staff.isActive
-                              ? "bg-green-500/10 text-green-400 border-green-500/20"
-                              : "bg-red-500/10 text-red-400 border-red-500/20"
-                          }`}
-                        >
-                          {staff.isActive ? "Hoạt động" : "Ngưng hoạt động"}
-                        </Badge>
-                      </td>
-                      <td className="p-4 text-zinc-400 text-xs">
-                        {new Date(staff.createdAt).toLocaleDateString("vi-VN")}
-                      </td>
-                      <td className="p-4 pr-6 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            size="icon-sm"
-                            variant="outline"
-                            onClick={() => handleOpenEditDialog(staff)}
-                            className="border-zinc-800 hover:bg-zinc-800/60 text-zinc-400 hover:text-zinc-200 h-8 w-8 rounded-lg cursor-pointer"
-                            title="Sửa thông tin"
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            size="icon-sm"
-                            variant="outline"
-                            onClick={() => handleToggleStatus(staff)}
-                            className={`border-zinc-800 hover:bg-zinc-800/60 h-8 w-8 rounded-lg cursor-pointer ${
-                              staff.isActive ? "text-red-400 hover:text-red-300" : "text-green-400 hover:text-green-300"
-                            }`}
-                            title={staff.isActive ? "Khóa tài khoản" : "Mở khóa tài khoản"}
-                          >
-                            {staff.isActive ? <UserX className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
-                          </Button>
-                        </div>
+                </thead>
+                <tbody className="divide-y divide-zinc-800/60">
+                  {filteredStaff.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="text-center p-8 text-zinc-500">
+                        Không tìm thấy nhân viên nào phù hợp.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+                  ) : (
+                    filteredStaff
+                      .slice((currentPage - 1) * pageSize, currentPage * pageSize)
+                      .map((staff) => (
+                        <tr key={staff.id} className={`hover:bg-zinc-850/20 transition-colors ${!staff.isActive ? "opacity-50" : ""}`}>
+                          <td className="p-4 pl-6">
+                            <div className="flex items-center gap-3">
+                              <div className="flex w-9 h-9 items-center justify-center rounded-xl bg-zinc-800 border border-zinc-750 text-amber-500 font-bold text-sm">
+                                {staff.name[0].toUpperCase()}
+                              </div>
+                              <div>
+                                <span className="font-bold text-white block">{staff.name}</span>
+                                <span className="text-[10px] text-zinc-500">Mã NV: #{staff.id}</span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            {getRoleBadge(staff.role)}
+                          </td>
+                          <td className="p-4 space-y-1">
+                            <div className="flex items-center gap-1.5 text-zinc-300 text-xs">
+                              <Mail className="w-3.5 h-3.5 text-zinc-500" />
+                              <span>{staff.email}</span>
+                            </div>
+                            {staff.phone && (
+                              <div className="flex items-center gap-1.5 text-zinc-300 text-xs">
+                                <Phone className="w-3.5 h-3.5 text-zinc-500" />
+                                <span>{staff.phone}</span>
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-4">
+                            <Badge
+                              variant="secondary"
+                              className={`px-2 py-0.5 text-[10px] font-bold border capitalize ${
+                                staff.isActive
+                                  ? "bg-green-500/10 text-green-400 border-green-500/20"
+                                  : "bg-red-500/10 text-red-400 border-red-500/20"
+                              }`}
+                            >
+                              {staff.isActive ? "Hoạt động" : "Ngưng hoạt động"}
+                            </Badge>
+                          </td>
+                          <td className="p-4 text-zinc-400 text-xs">
+                            {new Date(staff.createdAt).toLocaleDateString("vi-VN")}
+                          </td>
+                          <td className="p-4 pr-6 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                size="icon-sm"
+                                variant="outline"
+                                onClick={() => handleOpenEditDialog(staff)}
+                                className="border-zinc-800 hover:bg-zinc-800/60 text-zinc-400 hover:text-zinc-200 h-8 w-8 rounded-lg cursor-pointer"
+                                title="Sửa thông tin"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button
+                                size="icon-sm"
+                                variant="outline"
+                                onClick={() => handleToggleStatus(staff)}
+                                className={`border-zinc-800 hover:bg-zinc-800/60 h-8 w-8 rounded-lg cursor-pointer ${
+                                  staff.isActive ? "text-red-400 hover:text-red-300" : "text-green-400 hover:text-green-300"
+                                }`}
+                                title={staff.isActive ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+                              >
+                                {staff.isActive ? <UserX className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(filteredStaff.length / pageSize)}
+            onPageChange={setCurrentPage}
+            pageSize={pageSize}
+            onPageSizeChange={setPageSize}
+            totalItems={filteredStaff.length}
+          />
+        </div>
       )}
 
       {/* Add / Edit Staff Dialog */}

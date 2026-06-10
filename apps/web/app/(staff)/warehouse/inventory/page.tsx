@@ -29,12 +29,17 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { InventoryItem, InventoryItemType } from "@/types";
+import { Pagination } from "@/components/ui/pagination";
 
 export default function WarehouseInventoryPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"all" | "ingredient" | "product" | "low_warning">("all");
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Restock Dialog State
   const [isRestockOpen, setIsRestockOpen] = useState(false);
@@ -76,6 +81,11 @@ export default function WarehouseInventoryPage() {
   useEffect(() => {
     fetchInventory();
   }, []);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeTab]);
 
   const handleOpenRestock = (item: InventoryItem) => {
     setSelectedItem(item);
@@ -309,116 +319,128 @@ export default function WarehouseInventoryPage() {
           </div>
         </div>
       ) : (
-        /* Inventory Table */
-        <Card className="border-zinc-800 bg-zinc-900 shadow-md overflow-hidden animate-fade-in">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-zinc-800 bg-zinc-950/40 text-xs font-bold uppercase tracking-wider text-zinc-400">
-                  <th className="p-4 pl-6">Tên mặt hàng</th>
-                  <th className="p-4">Phân loại</th>
-                  <th className="p-4">Tồn kho</th>
-                  <th className="p-4">Mức tối thiểu</th>
-                  <th className="p-4">Đơn vị</th>
-                  <th className="p-4">Trạng thái</th>
-                  <th className="p-4 pr-6 text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-800/60">
-                {filteredItems.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="text-center p-8 text-zinc-500">
-                      Không có mặt hàng nào phù hợp.
-                    </td>
+        <div className="space-y-4">
+          {/* Inventory Table */}
+          <Card className="border-zinc-800 bg-zinc-900 shadow-md overflow-hidden animate-fade-in">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm border-collapse">
+                <thead>
+                  <tr className="border-b border-zinc-800 bg-zinc-950/40 text-xs font-bold uppercase tracking-wider text-zinc-400">
+                    <th className="p-4 pl-6">Tên mặt hàng</th>
+                    <th className="p-4">Phân loại</th>
+                    <th className="p-4">Tồn kho</th>
+                    <th className="p-4">Mức tối thiểu</th>
+                    <th className="p-4">Đơn vị</th>
+                    <th className="p-4">Trạng thái</th>
+                    <th className="p-4 pr-6 text-right">Thao tác</th>
                   </tr>
-                ) : (
-                  filteredItems.map((item) => {
-                    const current = Number(item.currentQty);
-                    const min = Number(item.minQty);
-                    const isLowStock = current <= min;
+                </thead>
+                <tbody className="divide-y divide-zinc-800/60">
+                  {filteredItems.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="text-center p-8 text-zinc-500">
+                        Không có mặt hàng nào phù hợp.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredItems
+                      .slice((currentPage - 1) * pageSize, currentPage * pageSize)
+                      .map((item) => {
+                        const current = Number(item.currentQty);
+                        const min = Number(item.minQty);
+                        const isLowStock = current <= min;
 
-                    return (
-                      <tr 
-                        key={item.id} 
-                        className={`hover:bg-zinc-850/20 transition-colors ${
-                          isLowStock 
-                            ? "bg-red-500/5 hover:bg-red-500/10" 
-                            : ""
-                        }`}
-                      >
-                        <td className="p-4 pl-6">
-                          <div className="flex items-center gap-2.5">
-                            {isLowStock && (
-                              <AlertTriangle className="w-4 h-4 text-red-500 animate-pulse flex-shrink-0" />
-                            )}
-                            <div>
-                              <span className="font-bold text-white block">{item.name}</span>
-                              {item.notes && (
-                                <span className="text-[10px] text-zinc-500 block truncate max-w-[200px]">{item.notes}</span>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <Badge 
-                            variant="secondary" 
-                            className={`px-1.5 py-0 text-[10px] font-bold uppercase border ${
-                              item.itemType === "ingredient"
-                                ? "bg-amber-500/10 text-amber-500 border-amber-500/15"
-                                : "bg-purple-500/10 text-purple-400 border-purple-500/15"
+                        return (
+                          <tr 
+                            key={item.id} 
+                            className={`hover:bg-zinc-850/20 transition-colors ${
+                              isLowStock 
+                                ? "bg-red-500/5 hover:bg-red-500/10" 
+                                : ""
                             }`}
                           >
-                            {item.itemType === "ingredient" ? "Nguyên liệu" : "Hàng hoá"}
-                          </Badge>
-                        </td>
-                        <td className={`p-4 font-bold text-base ${isLowStock ? "text-red-400" : "text-white"}`}>
-                          {current.toLocaleString("vi-VN")}
-                        </td>
-                        <td className="p-4 text-zinc-400 font-semibold">
-                          {min.toLocaleString("vi-VN")}
-                        </td>
-                        <td className="p-4 text-zinc-350 text-xs">
-                          {item.unit}
-                        </td>
-                        <td className="p-4">
-                          {isLowStock ? (
-                            <Badge className="bg-red-600/10 text-red-400 border border-red-500/25 text-[10px] font-extrabold px-1.5 py-0">
-                              Cần nhập kho
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-green-600/10 text-green-400 border border-green-500/25 text-[10px] font-extrabold px-1.5 py-0">
-                              Đủ hàng
-                            </Badge>
-                          )}
-                        </td>
-                        <td className="p-4 pr-6 text-right">
-                          <div className="flex gap-2 justify-end">
-                            <Button
-                              size="sm"
-                              onClick={() => handleOpenRestock(item)}
-                              className="bg-zinc-850 hover:bg-amber-500 hover:text-zinc-950 text-zinc-300 font-bold text-xs h-8 px-2.5 rounded-lg border border-zinc-750 transition cursor-pointer"
-                            >
-                              <ArrowDownToLine className="w-3.5 h-3.5 mr-1" />
-                              Nhập kho
-                            </Button>
-                            <Button
-                              size="sm"
-                              onClick={() => handleOpenExport(item)}
-                              className="bg-zinc-850 hover:bg-red-500 hover:text-zinc-950 text-zinc-300 font-bold text-xs h-8 px-2.5 rounded-lg border border-zinc-750 transition cursor-pointer"
-                            >
-                              <ArrowUpFromLine className="w-3.5 h-3.5 mr-1" />
-                              Xuất kho
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+                            <td className="p-4 pl-6">
+                              <div className="flex items-center gap-2.5">
+                                {isLowStock && (
+                                  <AlertTriangle className="w-4 h-4 text-red-500 animate-pulse flex-shrink-0" />
+                                )}
+                                <div>
+                                  <span className="font-bold text-white block">{item.name}</span>
+                                  {item.notes && (
+                                    <span className="text-[10px] text-zinc-500 block truncate max-w-[200px]">{item.notes}</span>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-4">
+                              <Badge 
+                                variant="secondary" 
+                                className={`px-1.5 py-0 text-[10px] font-bold uppercase border ${
+                                  item.itemType === "ingredient"
+                                    ? "bg-amber-500/10 text-amber-500 border-amber-500/15"
+                                    : "bg-purple-500/10 text-purple-400 border-purple-500/15"
+                                }`}
+                              >
+                                {item.itemType === "ingredient" ? "Nguyên liệu" : "Hàng hoá"}
+                              </Badge>
+                            </td>
+                            <td className={`p-4 font-bold text-base ${isLowStock ? "text-red-400" : "text-white"}`}>
+                              {current.toLocaleString("vi-VN")}
+                            </td>
+                            <td className="p-4 text-zinc-400 font-semibold">
+                              {min.toLocaleString("vi-VN")}
+                            </td>
+                            <td className="p-4 text-zinc-350 text-xs">
+                              {item.unit}
+                            </td>
+                            <td className="p-4">
+                              {isLowStock ? (
+                                <Badge className="bg-red-600/10 text-red-400 border border-red-500/25 text-[10px] font-extrabold px-1.5 py-0">
+                                  Cần nhập kho
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-green-600/10 text-green-400 border border-green-500/25 text-[10px] font-extrabold px-1.5 py-0">
+                                  Đủ hàng
+                                </Badge>
+                              )}
+                            </td>
+                            <td className="p-4 pr-6 text-right">
+                              <div className="flex gap-2 justify-end">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleOpenRestock(item)}
+                                  className="bg-zinc-850 hover:bg-amber-500 hover:text-zinc-950 text-zinc-300 font-bold text-xs h-8 px-2.5 rounded-lg border border-zinc-750 transition cursor-pointer"
+                                >
+                                  <ArrowDownToLine className="w-3.5 h-3.5 mr-1" />
+                                  Nhập kho
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleOpenExport(item)}
+                                  className="bg-zinc-850 hover:bg-red-500 hover:text-zinc-950 text-zinc-300 font-bold text-xs h-8 px-2.5 rounded-lg border border-zinc-750 transition cursor-pointer"
+                                >
+                                  <ArrowUpFromLine className="w-3.5 h-3.5 mr-1" />
+                                  Xuất kho
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(filteredItems.length / pageSize)}
+            onPageChange={setCurrentPage}
+            pageSize={pageSize}
+            onPageSizeChange={setPageSize}
+            totalItems={filteredItems.length}
+          />
+        </div>
       )}
 
       {/* Restock Dialog (Nhập kho) */}
