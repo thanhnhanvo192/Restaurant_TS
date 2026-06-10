@@ -32,15 +32,14 @@ function VNPayReturnContent() {
   );
 }
 
+export const dynamic = "force-dynamic";
+
 export default function VNPayReturnPage() {
   return (
     <Suspense fallback={
       <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900 px-4">
-        <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl max-w-md w-full text-center flex flex-col items-center border border-slate-100 dark:border-slate-700">
-          <Loader2 className="h-16 w-16 text-emerald-500 animate-spin mb-6" />
-          <h1 className="text-2xl font-bold mb-2 text-slate-800 dark:text-slate-100 font-sans">
-            Đang tải dữ liệu...
-          </h1>
+        <div className="text-slate-500 dark:text-slate-400 font-sans text-sm">
+          Đang tải dữ liệu...
         </div>
       </div>
     }>
