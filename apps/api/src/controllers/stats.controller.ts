@@ -327,3 +327,210 @@ export async function getTopItems(
     next(error);
   }
 }
+
+// ============ getInventorySummary ============
+
+export async function getInventorySummary(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const { period = "today" } = req.query;
+
+    if (!["today", "week", "month"].includes(period as string)) {
+      res.status(400).json({
+        success: false,
+        error: "Invalid period. Use: today, week, month",
+        code: "INVALID_PERIOD",
+      });
+      return;
+    }
+
+    const [startDate, endDate] = getDateRange(
+      period as "today" | "week" | "month",
+    );
+
+    // Fetch all transactions in the date range with their item details
+    const transactions = await prisma.inventoryTransaction.findMany({
+      where: {
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      include: {
+        item: true,
+      },
+    });
+
+    let totalImportValue = 0;
+    let totalImportQty = 0;
+    let totalExportQty = 0;
+    let totalImportTransactions = 0;
+    let totalExportTransactions = 0;
+    let totalAdjustmentTransactions = 0;
+
+    transactions.forEach((tx) => {
+      const qty = parseFloat(tx.quantity.toString());
+      if (tx.type === "in") {
+        totalImportTransactions++;
+        totalImportQty += qty;
+        if (tx.unitCost) {
+          totalImportValue += qty * parseFloat(tx.unitCost.toString());
+        }
+      } else if (tx.type === "out") {
+        totalExportTransactions++;
+        totalExportQty += qty;
+      } else if (tx.type === "adjustment") {
+        totalAdjustmentTransactions++;
+      }
+    });
+
+    // Top 5 items by import quantity and export quantity
+    const importMap = new Map<number, { name: string; unit: string; qty: number; value: number }>();
+    const exportMap = new Map<number, { name: string; unit: string; qty: number }>();
+
+    transactions.forEach((tx) => {
+      const qty = parseFloat(tx.quantity.toString());
+      if (tx.type === "in") {
+        const existing = importMap.get(tx.itemId) || { name: tx.item.name, unit: tx.item.unit, qty: 0, value: 0 };
+        existing.qty += qty;
+        if (tx.unitCost) {
+          existing.value += qty * parseFloat(tx.unitCost.toString());
+        }
+        importMap.set(tx.itemId, existing);
+      } else if (tx.type === "out") {
+        const existing = exportMap.get(tx.itemId) || { name: tx.item.name, unit: tx.item.unit, qty: 0 };
+        existing.qty += qty;
+        exportMap.set(tx.itemId, existing);
+      }
+    });
+
+    const topImportedItems = Array.from(importMap.entries())
+      .map(([itemId, data]) => ({
+        itemId,
+        name: data.name,
+        unit: data.unit,
+        total_quantity: data.qty,
+        total_value: data.value,
+      }))
+      .sort((a, b) => b.total_quantity - a.total_quantity)
+      .slice(0, 5);
+
+    const topExportedItems = Array.from(exportMap.entries())
+      .map(([itemId, data]) => ({
+        itemId,
+        name: data.name,
+        unit: data.unit,
+        total_quantity: data.qty,
+      }))
+      .sort((a, b) => b.total_quantity - a.total_quantity)
+      .slice(0, 5);
+
+    res.json({
+      success: true,
+      data: {
+        total_import_value: totalImportValue,
+        total_import_qty: totalImportQty,
+        total_export_qty: totalExportQty,
+        total_import_transactions: totalImportTransactions,
+        total_export_transactions: totalExportTransactions,
+        total_adjustment_transactions: totalAdjustmentTransactions,
+        top_imported_items: topImportedItems,
+        top_exported_items: topExportedItems,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+// ============ getInventoryChart ============
+
+export async function getInventoryChart(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const { days = "30" } = req.query;
+    const numDays = parseInt(days as string, 10);
+
+    if (isNaN(numDays) || numDays < 1) {
+      res.status(400).json({
+        success: false,
+        error: "days must be a positive integer",
+        code: "INVALID_DAYS",
+      });
+      return;
+    }
+
+    const endDate = new Date();
+    endDate.setHours(23, 59, 59, 999);
+
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - numDays + 1);
+    startDate.setHours(0, 0, 0, 0);
+
+    const transactions = await prisma.inventoryTransaction.findMany({
+      where: {
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
+
+    const dataMap = new Map<string, { import_value: number; import_qty: number; export_qty: number }>();
+
+    transactions.forEach((tx) => {
+      const dateStr = new Date(tx.createdAt).toISOString().split("T")[0];
+      const existing = dataMap.get(dateStr) || { import_value: 0, import_qty: 0, export_qty: 0 };
+
+      const qty = parseFloat(tx.quantity.toString());
+      if (tx.type === "in") {
+        existing.import_qty += qty;
+        if (tx.unitCost) {
+          existing.import_value += qty * parseFloat(tx.unitCost.toString());
+        }
+      } else if (tx.type === "out") {
+        existing.export_qty += qty;
+      }
+
+      dataMap.set(dateStr, existing);
+    });
+
+    const chart: Array<{
+      date: string;
+      import_value: number;
+      import_qty: number;
+      export_qty: number;
+    }> = [];
+    const currentDate = new Date(startDate);
+
+    while (currentDate <= endDate) {
+      const dateStr = currentDate.toISOString().split("T")[0];
+      const existing = dataMap.get(dateStr);
+
+      chart.push({
+        date: dateStr,
+        import_value: existing?.import_value ?? 0,
+        import_qty: existing?.import_qty ?? 0,
+        export_qty: existing?.export_qty ?? 0,
+      });
+
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    res.json({
+      success: true,
+      data: chart,
+    });
+  } catch (error) {
+    next(error);
+  }
+}

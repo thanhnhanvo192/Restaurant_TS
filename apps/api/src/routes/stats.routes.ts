@@ -3,6 +3,8 @@ import {
   getRevenueSummary,
   getRevenueChart,
   getTopItems,
+  getInventorySummary,
+  getInventoryChart,
 } from "../controllers/stats.controller";
 import { verifyStaffToken } from "../middlewares/auth.middleware";
 
@@ -58,5 +60,21 @@ router.get("/revenue-chart", verifyStaffToken, verifyManager, getRevenueChart);
  * Note: Only counts served orders with paid invoices
  */
 router.get("/top-items", verifyStaffToken, verifyManager, getTopItems);
+
+/**
+ * GET /api/stats/inventory?period=today
+ * Get inventory summary for a specific period
+ * Query params: period = 'today' | 'week' | 'month' (default: today)
+ * Manager only
+ */
+router.get("/inventory", verifyStaffToken, verifyManager, getInventorySummary);
+
+/**
+ * GET /api/stats/inventory-chart?days=30
+ * Get inventory chart data for last N days
+ * Query params: days = number (default: 30)
+ * Manager only
+ */
+router.get("/inventory-chart", verifyStaffToken, verifyManager, getInventoryChart);
 
 export default router;
