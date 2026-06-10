@@ -372,7 +372,7 @@ export default function ManagerStaffPage() {
                 placeholder="Nhập họ và tên..."
                 value={staffName}
                 onChange={(e) => setStaffName(e.target.value)}
-                className="bg-zinc-950 border-zinc-800 text-white rounded-xl focus:border-amber-500 transition"
+                className="bg-zinc-950 border-zinc-800 text-black rounded-xl focus:border-amber-500 transition"
                 required
               />
             </div>
@@ -388,7 +388,7 @@ export default function ManagerStaffPage() {
                     placeholder="name@restaurant.com"
                     value={staffEmail}
                     onChange={(e) => setStaffEmail(e.target.value)}
-                    className="bg-zinc-950 border-zinc-800 text-white rounded-xl pl-9 focus:border-amber-500 transition"
+                    className="bg-zinc-950 border-zinc-800 text-black rounded-xl pl-9 focus:border-amber-500 transition"
                     required
                   />
                 </div>

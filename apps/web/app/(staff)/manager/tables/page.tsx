@@ -515,7 +515,7 @@ export default function ManagerTablesPage() {
                 placeholder="Ví dụ: 01, A5, VIP1..."
                 value={tableNumber}
                 onChange={(e) => setTableNumber(e.target.value)}
-                className="bg-zinc-950 border-zinc-800 text-white rounded-xl focus:border-amber-500 transition"
+                className="bg-zinc-950 border-zinc-800 text-black rounded-xl focus:border-amber-500 transition"
                 required
               />
             </div>
@@ -529,7 +529,7 @@ export default function ManagerTablesPage() {
                   min={1}
                   value={capacity || ""}
                   onChange={(e) => setCapacity(Number(e.target.value))}
-                  className="bg-zinc-950 border-zinc-800 text-white rounded-xl focus:border-amber-500 transition"
+                  className="bg-zinc-950 border-zinc-800 text-black rounded-xl focus:border-amber-500 transition"
                   required
                 />
               </div>
@@ -540,7 +540,7 @@ export default function ManagerTablesPage() {
                   placeholder="Ví dụ: Sảnh chính, Lầu 1, VIP..."
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="bg-zinc-950 border-zinc-800 text-white rounded-xl focus:border-amber-500 transition"
+                  className="bg-zinc-950 border-zinc-800 text-black rounded-xl focus:border-amber-500 transition"
                 />
               </div>
             </div>
@@ -569,7 +569,7 @@ export default function ManagerTablesPage() {
                 placeholder="Ghi chú về vị trí, đặc điểm của bàn..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="bg-zinc-950 border border-zinc-800 text-white rounded-xl p-3 text-sm h-20 w-full outline-none focus:border-amber-500 transition"
+                className="bg-zinc-950 border border-zinc-800 text-black rounded-xl p-3 text-sm h-20 w-full outline-none focus:border-amber-500 transition"
               />
             </div>
 

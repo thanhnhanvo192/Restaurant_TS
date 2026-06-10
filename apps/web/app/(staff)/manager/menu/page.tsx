@@ -618,7 +618,7 @@ export default function ManagerMenuPage() {
                 placeholder="Nhập tên món ăn..."
                 value={itemName}
                 onChange={(e) => setItemName(e.target.value)}
-                className="bg-zinc-950 border-zinc-800 text-white rounded-xl focus:border-amber-500 transition"
+                className="bg-zinc-950 border-zinc-800 text-black rounded-xl focus:border-amber-500 transition"
                 required
               />
             </div>
@@ -649,7 +649,7 @@ export default function ManagerMenuPage() {
                   placeholder="Giá bán..."
                   value={itemPrice}
                   onChange={(e) => setItemPrice(e.target.value)}
-                  className="bg-zinc-950 border-zinc-800 text-white rounded-xl focus:border-amber-500 transition"
+                  className="bg-zinc-950 border-zinc-800 text-black rounded-xl focus:border-amber-500 transition"
                   min="0"
                   required
                 />
@@ -664,7 +664,7 @@ export default function ManagerMenuPage() {
                 placeholder="0"
                 value={itemSortOrder}
                 onChange={(e) => setItemSortOrder(e.target.value)}
-                className="bg-zinc-950 border-zinc-800 text-white rounded-xl focus:border-amber-500 transition"
+                className="bg-zinc-950 border-zinc-800 text-black rounded-xl focus:border-amber-500 transition"
                 min="0"
               />
             </div>
@@ -677,7 +677,7 @@ export default function ManagerMenuPage() {
                 value={itemDescription}
                 onChange={(e) => setItemDescription(e.target.value)}
                 rows={3}
-                className="w-full bg-zinc-950 border border-zinc-800 text-white rounded-xl p-3 text-sm focus:border-amber-500 transition outline-none"
+                className="w-full bg-zinc-950 border border-zinc-800 text-black rounded-xl p-3 text-sm focus:border-amber-500 transition outline-none"
               />
             </div>
 

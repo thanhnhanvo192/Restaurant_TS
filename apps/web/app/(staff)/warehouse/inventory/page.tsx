@@ -469,7 +469,7 @@ export default function WarehouseInventoryPage() {
                     placeholder="Số lượng..."
                     value={restockQty}
                     onChange={(e) => setRestockQty(e.target.value)}
-                    className="bg-zinc-950 border-zinc-800 text-white rounded-xl pl-9 focus:border-amber-500 transition"
+                    className="bg-zinc-950 border-zinc-800 text-black rounded-xl pl-9 focus:border-amber-500 transition"
                     required
                   />
                 </div>
@@ -485,7 +485,7 @@ export default function WarehouseInventoryPage() {
                     placeholder="Đơn giá..."
                     value={restockPrice}
                     onChange={(e) => setRestockPrice(e.target.value)}
-                    className="bg-zinc-950 border-zinc-800 text-white rounded-xl pl-9 focus:border-amber-500 transition"
+                    className="bg-zinc-950 border-zinc-800 text-black rounded-xl pl-9 focus:border-amber-500 transition"
                   />
                 </div>
               </div>
@@ -500,7 +500,7 @@ export default function WarehouseInventoryPage() {
                   placeholder="Tên nhà cung cấp..."
                   value={restockSupplier}
                   onChange={(e) => setRestockSupplier(e.target.value)}
-                  className="bg-zinc-950 border-zinc-800 text-white rounded-xl pl-9 focus:border-amber-500 transition"
+                  className="bg-zinc-950 border-zinc-800 text-black rounded-xl pl-9 focus:border-amber-500 transition"
                 />
               </div>
             </div>
@@ -515,7 +515,7 @@ export default function WarehouseInventoryPage() {
                   value={restockNote}
                   onChange={(e) => setRestockNote(e.target.value)}
                   rows={2}
-                  className="w-full bg-zinc-950 border border-zinc-800 text-white rounded-xl p-3 pl-9 text-sm focus:border-amber-500 transition outline-none"
+                  className="w-full bg-zinc-950 border border-zinc-800 text-black rounded-xl p-3 pl-9 text-sm focus:border-amber-500 transition outline-none"
                 />
               </div>
             </div>
@@ -573,7 +573,7 @@ export default function WarehouseInventoryPage() {
                      placeholder={`Tối đa ${selectedItem ? Number(selectedItem.currentQty) : 0}...`}
                      value={exportQty}
                      onChange={(e) => setExportQty(e.target.value)}
-                     className="bg-zinc-950 border-zinc-800 text-white rounded-xl pl-9 focus:border-red-500 transition"
+                     className="bg-zinc-950 border-zinc-800 text-black rounded-xl pl-9 focus:border-red-500 transition"
                      required
                   />
                 </div>
@@ -592,7 +592,7 @@ export default function WarehouseInventoryPage() {
                     value={exportNote}
                     onChange={(e) => setExportNote(e.target.value)}
                     rows={2}
-                    className="w-full bg-zinc-950 border border-zinc-800 text-white rounded-xl p-3 pl-9 text-sm focus:border-red-500 transition outline-none"
+                    className="w-full bg-zinc-950 border border-zinc-800 text-black rounded-xl p-3 pl-9 text-sm focus:border-red-500 transition outline-none"
                   />
                 </div>
               </div>
@@ -643,7 +643,7 @@ export default function WarehouseInventoryPage() {
                 placeholder="Ví dụ: Thịt bò Mỹ, Pepsi lon..."
                 value={newItemName}
                 onChange={(e) => setNewItemName(e.target.value)}
-                className="bg-zinc-950 border-zinc-800 text-white rounded-xl focus:border-amber-500 transition"
+                className="bg-zinc-950 border-zinc-800 text-black rounded-xl focus:border-amber-500 transition"
                 required
               />
             </div>
@@ -669,7 +669,7 @@ export default function WarehouseInventoryPage() {
                   placeholder="kg, lít, lon..."
                   value={newItemUnit}
                   onChange={(e) => setNewItemUnit(e.target.value)}
-                  className="bg-zinc-950 border-zinc-800 text-white rounded-xl focus:border-amber-500 transition"
+                  className="bg-zinc-950 border-zinc-800 text-black rounded-xl focus:border-amber-500 transition"
                   required
                 />
               </div>
@@ -684,7 +684,7 @@ export default function WarehouseInventoryPage() {
                 placeholder="0"
                 value={newItemMinQty}
                 onChange={(e) => setNewItemMinQty(e.target.value)}
-                className="bg-zinc-950 border-zinc-800 text-white rounded-xl focus:border-amber-500 transition"
+                className="bg-zinc-950 border-zinc-800 text-black rounded-xl focus:border-amber-500 transition"
                 min="0"
               />
             </div>
@@ -697,7 +697,7 @@ export default function WarehouseInventoryPage() {
                 value={newItemNotes}
                 onChange={(e) => setNewItemNotes(e.target.value)}
                 rows={2}
-                className="w-full bg-zinc-950 border border-zinc-800 text-white rounded-xl p-3 text-sm focus:border-amber-500 transition outline-none"
+                className="w-full bg-zinc-950 border border-zinc-800 text-black rounded-xl p-3 text-sm focus:border-amber-500 transition outline-none"
               />
             </div>
 
