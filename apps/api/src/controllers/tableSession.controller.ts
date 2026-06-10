@@ -173,7 +173,7 @@ export async function openSession(
     }
 
     // Handle different table statuses
-    if (table.status === "available") {
+    if (table.status === "available" || (table.status === "reserved" && reservationId)) {
       // Create new session and update table status in transaction
       const result = await prisma.$transaction(async (tx: any) => {
         // Create new session

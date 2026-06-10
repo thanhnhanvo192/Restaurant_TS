@@ -14,6 +14,7 @@ import invoiceRoutes from "./routes/invoice.routes";
 import inventoryRoutes from "./routes/inventory.routes";
 import statsRoutes from "./routes/stats.routes";
 import { initializeSocket } from "./socket";
+import { startScheduler } from "./utils/scheduler";
 
 dotenv.config();
 
@@ -119,6 +120,7 @@ const PORT = process.env.PORT || 4000;
 httpServer.listen(PORT, () => {
   console.log(`✅ Server is running on http://localhost:${PORT}`);
   console.log(`📡 Socket.IO ready`);
+  startScheduler();
 });
 
 export { app, io };

@@ -37,7 +37,7 @@ interface Reservation {
   reservedDate: string;
   reservedTime: string;
   guestCount: number;
-  status: "pending" | "confirmed" | "cancelled" | "completed";
+  status: "pending" | "confirmed" | "cancelled" | "completed" | "no_show";
   user: {
     name: string;
     phone: string | null;
@@ -197,7 +197,8 @@ export default function ManagerDashboardPage() {
       pending: { label: "Chờ duyệt", class: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20" },
       confirmed: { label: "Đã xác nhận", class: "bg-amber-500/10 text-amber-500 border-amber-500/20" },
       cancelled: { label: "Đã hủy", class: "bg-red-500/10 text-red-400 border-red-500/20" },
-      completed: { label: "Hoàn tất", class: "bg-green-500/10 text-green-400 border-green-500/20" }
+      completed: { label: "Hoàn tất", class: "bg-green-500/10 text-green-400 border-green-500/20" },
+      no_show: { label: "Vắng mặt", class: "bg-rose-500/10 text-rose-400 border-rose-500/20" }
     };
     const config = configs[status] || { label: status, class: "bg-zinc-800 text-zinc-400" };
     return (

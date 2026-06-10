@@ -11,6 +11,10 @@ const getAvailableTablesSchema = z.object({
   date: z.string().refine((val) => !isNaN(Date.parse(val)), "Invalid date"),
   time: z.string().regex(/^\d{2}:\d{2}$/, "Time must be in HH:mm format"),
   guestCount: z.number().int().positive("Guest count must be positive"),
+  durationHours: z.preprocess(
+    (val) => (val === undefined ? undefined : Number(val)),
+    z.number().positive().optional().default(2)
+  ),
 });
 
 const createReservationSchema = z.object({
@@ -22,7 +26,7 @@ const createReservationSchema = z.object({
 });
 
 const getReservationsSchema = z.object({
-  status: z.enum(["pending", "confirmed", "cancelled", "completed"]).optional(),
+  status: z.enum(["pending", "confirmed", "cancelled", "completed", "no_show"]).optional(),
   date: z.string().optional(),
   customerId: z.number().int().optional(),
 });
@@ -41,14 +45,15 @@ const cancelReservationSchema = z.object({
  * Helper: Check if a table is available for given date/time
  * Available means:
  * 1. Capacity >= guestCount
- * 2. No confirmed/pending reservations in ±2 hour window
- * 3. No open table sessions
+ * 2. No confirmed/pending reservations in overlap window
+ * 3. No open table sessions overlapping the requested window
  */
-async function isTableAvailable(
+export async function isTableAvailable(
   tableId: number,
-  reservedDate: Date,
-  reservedTime: string,
+  reservedDateStr: string, // YYYY-MM-DD
+  reservedTimeStr: string, // HH:mm
   guestCount: number,
+  durationHours: number = 2,
 ): Promise<boolean> {
   // Check capacity
   const table = await prisma.table.findUnique({
@@ -59,40 +64,31 @@ async function isTableAvailable(
     return false;
   }
 
-  // Parse the requested time
-  const [hour, minute] = reservedTime.split(":").map(Number);
+  // Parse the requested start time (local timezone of the server)
+  const [year, month, day] = reservedDateStr.split("-").map(Number);
+  const [hour, minute] = reservedTimeStr.split(":").map(Number);
+  const requestedDateTime = new Date(year, month - 1, day, hour, minute, 0, 0);
 
-  // Create a datetime for the requested reservation
-  const requestedDateTime = new Date(reservedDate);
-  requestedDateTime.setHours(hour, minute, 0, 0);
-
-  // Define the ±2 hour window
-  const windowStart = new Date(
-    requestedDateTime.getTime() - 2 * 60 * 60 * 1000,
+  // Define requested slot end time
+  const requestedEndDateTime = new Date(
+    requestedDateTime.getTime() + durationHours * 60 * 60 * 1000
   );
-  const windowEnd = new Date(requestedDateTime.getTime() + 2 * 60 * 60 * 1000);
 
-  // Determine which dates to check (handles case where window spans multiple days)
-  const startDate = new Date(windowStart);
-  startDate.setHours(0, 0, 0, 0);
-  const endDate = new Date(windowEnd);
-  endDate.setHours(23, 59, 59, 999);
+  // Create date object at midnight local time for Prisma query
+  const parsedDate = new Date(year, month - 1, day);
 
-  // Find all reservations for this table within the date range
+  // Find all reservations for this table on this date
   const conflictingReservations = await prisma.reservation.findMany({
     where: {
       tableId,
-      reservedDate: {
-        gte: startDate,
-        lte: endDate,
-      },
+      reservedDate: parsedDate,
       status: { in: ["pending", "confirmed"] },
     },
   });
 
-  // Check if any reservation falls within the ±2 hour window
+  // Check overlap for each reservation
   for (const res of conflictingReservations) {
-    // Extract time from the Time field
+    // Extract reservation start time
     const resTime =
       res.reservedTime instanceof Date
         ? `${String(res.reservedTime.getUTCHours()).padStart(2, "0")}:${String(res.reservedTime.getUTCMinutes()).padStart(2, "0")}`
@@ -100,17 +96,28 @@ async function isTableAvailable(
 
     const [resHour, resMinute] = resTime.split(":").map(Number);
 
-    // Create datetime for this reservation
-    const resDateTime = new Date(res.reservedDate);
-    resDateTime.setHours(resHour, resMinute, 0, 0);
+    // Create datetime for this reservation using its stored date components to avoid timezone shifting
+    const resYear = res.reservedDate.getUTCFullYear();
+    const resMonth = res.reservedDate.getUTCMonth();
+    const resDay = res.reservedDate.getUTCDate();
+    const resDateTime = new Date(resYear, resMonth, resDay, resHour, resMinute, 0, 0);
 
-    // Check if this reservation's time falls within our window
-    if (resDateTime >= windowStart && resDateTime <= windowEnd) {
+    // Get reservation duration
+    const resDurationMinutes = res.durationMinutes || 120;
+    const resEndDateTime = new Date(
+      resDateTime.getTime() + resDurationMinutes * 60 * 1000
+    );
+
+    // Check overlap: requested range overlaps with reservation range
+    // Interval overlap: StartA < EndB and StartB < EndA
+    if (requestedDateTime < resEndDateTime && resDateTime < requestedEndDateTime) {
       return false;
     }
   }
 
   // Check for open table sessions
+  // An open session only conflicts if the requested start/end time overlaps with it.
+  // We assume an open session will occupy the table from openedAt to openedAt + 2 hours.
   const openSession = await prisma.tableSession.findFirst({
     where: {
       tableId,
@@ -118,7 +125,16 @@ async function isTableAvailable(
     },
   });
 
-  return !openSession;
+  if (openSession) {
+    const sessionStart = new Date(openSession.openedAt);
+    const sessionEnd = new Date(sessionStart.getTime() + 2 * 60 * 60 * 1000);
+    
+    if (requestedDateTime < sessionEnd && sessionStart < requestedEndDateTime) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 // ============ Controllers ============
@@ -126,7 +142,7 @@ async function isTableAvailable(
 /**
  * GET /api/reservations/available-tables
  * PUBLIC - Get available tables for given date, time, and guest count
- * Query params: date (YYYY-MM-DD), time (HH:mm), guestCount
+ * Query params: date (YYYY-MM-DD), time (HH:mm), guestCount, duration_hours?
  */
 export async function getAvailableTables(
   req: Request,
@@ -138,12 +154,8 @@ export async function getAvailableTables(
       date: req.query.date,
       time: req.query.time,
       guestCount: Number(req.query.guest_count),
+      durationHours: req.query.duration_hours,
     });
-
-    const reservedDate = new Date(query.date);
-    const [hour, minute] = query.time.split(":").map(Number);
-    const requestedDateTime = new Date(reservedDate);
-    requestedDateTime.setHours(hour, minute, 0, 0);
 
     // Get all active tables with their availability
     const availableTables = await prisma.table.findMany({
@@ -169,9 +181,10 @@ export async function getAvailableTables(
     for (const table of availableTables) {
       const available = await isTableAvailable(
         table.id,
-        reservedDate,
+        query.date,
         query.time,
         query.guestCount,
+        query.durationHours,
       );
 
       if (available) {
@@ -225,7 +238,7 @@ export async function createReservation(
     // Check if table is available
     const available = await isTableAvailable(
       body.tableId,
-      reservedDate,
+      body.date,
       body.time,
       body.guestCount,
     );

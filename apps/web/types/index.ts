@@ -42,7 +42,7 @@ export interface Table {
   createdAt: string;
 }
 
-export type ReservationStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed';
+export type ReservationStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
 
 export interface Reservation {
   id: number;
@@ -55,6 +55,8 @@ export interface Reservation {
   confirmedById?: number | null;
   customerNote?: string | null;
   staffNote?: string | null;
+  durationMinutes?: number;
+  noShowAt?: string | null;
   createdAt: string;
   updatedAt: string;
   user?: User;

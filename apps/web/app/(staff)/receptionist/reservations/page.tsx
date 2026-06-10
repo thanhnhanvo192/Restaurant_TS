@@ -218,6 +218,7 @@ export default function ReceptionistReservationsPage() {
       confirmed: { label: "Đã xác nhận", class: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" },
       cancelled: { label: "Đã hủy", class: "bg-red-500/10 text-red-400 border-red-500/20" },
       completed: { label: "Hoàn tất", class: "bg-zinc-800 text-zinc-400 border-zinc-700" },
+      no_show: { label: "Vắng mặt (No-show)", class: "bg-rose-500/10 text-rose-400 border-rose-500/20" },
     };
     const match = config[status] || { label: status, class: "bg-zinc-800 text-zinc-400 border-zinc-700" };
     return (
