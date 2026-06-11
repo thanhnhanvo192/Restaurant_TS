@@ -116,6 +116,54 @@ export async function runScheduler() {
         }
       }
     }
+
+    // 3. Clean up tables that are marked 'reserved' but have no active upcoming reservation in 2 hours
+    const reservedTables = await prisma.table.findMany({
+      where: { status: "reserved", isActive: true }
+    });
+
+    for (const table of reservedTables) {
+      let hasUpcomingActive = false;
+      for (const res of activeReservations) {
+        if (res.tableId === table.id && res.status === "confirmed") {
+          const resTime =
+            res.reservedTime instanceof Date
+              ? `${String(res.reservedTime.getUTCHours()).padStart(2, "0")}:${String(res.reservedTime.getUTCMinutes()).padStart(2, "0")}`
+              : String(res.reservedTime);
+          const [resHour, resMinute] = resTime.split(":").map(Number);
+          const resYear = res.reservedDate.getUTCFullYear();
+          const resMonth = res.reservedDate.getUTCMonth();
+          const resDay = res.reservedDate.getUTCDate();
+          const resDateTime = new Date(resYear, resMonth, resDay, resHour, resMinute, 0, 0);
+          
+          const diffMs = resDateTime.getTime() - now.getTime();
+          const diffMinutes = diffMs / (60 * 1000);
+          
+          if (diffMinutes <= 120 && diffMinutes > -120) {
+            hasUpcomingActive = true;
+            break;
+          }
+        }
+      }
+
+      if (!hasUpcomingActive) {
+        await prisma.table.update({
+          where: { id: table.id },
+          data: { status: "available" }
+        });
+        console.log(`[Scheduler] Reset Table #${table.id} (${table.tableNumber}) status to 'available' because there are no active reservations in the 2-hour window.`);
+        if (socketService) {
+          try {
+            socketService.emitToReceptionists("table-status-changed", {
+              tableId: table.id,
+              status: "available",
+            });
+          } catch (e) {
+            console.error("Socket emit failed in scheduler", e);
+          }
+        }
+      }
+    }
   } catch (error) {
     console.error("[Scheduler] Error in runScheduler:", error);
   }

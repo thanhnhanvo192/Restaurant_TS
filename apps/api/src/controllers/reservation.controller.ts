@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { PrismaClient } from "@prisma/client";
 import { getSocketService } from "../socket";
+import { runScheduler } from "../utils/scheduler";
 
 const prisma = new PrismaClient();
 
@@ -565,6 +566,9 @@ export async function confirmReservation(
       console.error(`[Socket.IO] ❌ Failed to emit reservation-confirmed:`, socketError);
     }
 
+    // Trigger scheduler asynchronously to update table status immediately if within window
+    runScheduler().catch((err) => console.error("Failed to run scheduler on reservation confirm:", err));
+
     res.status(200).json({
       success: true,
       data: updated,
@@ -727,6 +731,9 @@ export async function cancelReservation(
     } catch (socketError) {
       console.error(`[Socket.IO] ❌ Failed to emit reservation-cancelled:`, socketError);
     }
+
+    // Trigger scheduler asynchronously to update table status immediately
+    runScheduler().catch((err) => console.error("Failed to run scheduler on reservation cancel:", err));
 
     res.status(200).json({
       success: true,
