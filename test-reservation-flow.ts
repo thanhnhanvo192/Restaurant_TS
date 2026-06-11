@@ -1,7 +1,8 @@
 import { PrismaClient } from "@prisma/client";
-import { runScheduler } from "./apps/api/src/utils/scheduler.js";
-import { isTableAvailable } from "./apps/api/src/controllers/reservation.controller.js";
-import { openSession } from "./apps/api/src/controllers/tableSession.controller.js";
+import "./apps/api/src/middlewares/auth.middleware";
+import { runScheduler } from "./apps/api/src/utils/scheduler";
+import { isTableAvailable } from "./apps/api/src/controllers/reservation.controller";
+import { openSession } from "./apps/api/src/controllers/tableSession.controller";
 
 const prisma = new PrismaClient();
 
@@ -100,9 +101,9 @@ async function main() {
   // Scenario step 3: 17:00 — Bàn 1 tự động đổi sang RESERVED (trước 2 giờ)
   // To test the scheduler logic, we will mock the current time.
   const now = new Date();
-  const soon = new Date(now.getTime() + 25 * 60 * 1000); // 25 minutes from now
+  const soon = new Date(now.getTime() + 115 * 60 * 1000); // 115 minutes from now (within 2 hours window)
   const soonTimeStr = `${String(soon.getHours()).padStart(2, "0")}:${String(soon.getMinutes()).padStart(2, "0")}`;
-  console.log(`\n3. Testing scheduler upcoming reservation auto-block (within 30 mins):`);
+  console.log(`\n3. Testing scheduler upcoming reservation auto-block (within 2 hours):`);
   console.log(`   Current actual time: ${now.toTimeString()}`);
   console.log(`   Creating upcoming reservation at: ${soonTimeStr}`);
 
@@ -136,9 +137,12 @@ async function main() {
     body: { reservationId: resUpcoming.id }
   } as any;
   const res = {
-    status: (code: number) => ({
-      json: (data: any) => { responseData = data; }
-    })
+    status: (code: number) => {
+      console.log(`   [Mock response] HTTP Status Code set to: ${code}`);
+      return {
+        json: (data: any) => { responseData = data; }
+      };
+    }
   } as any;
   const next = (err: any) => { console.error("next called with", err); };
 

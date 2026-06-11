@@ -50,8 +50,8 @@ export async function runScheduler() {
       const diffMs = resDateTime.getTime() - now.getTime();
       const diffMinutes = diffMs / (60 * 1000);
       
-      // 1. "Tìm reservations confirmed có reserved_time trong 30 phút tới → Đổi table status → 'reserved'"
-      if (res.status === "confirmed" && diffMinutes <= 30 && diffMinutes > -120) {
+      // 1. "Tìm reservations confirmed có reserved_time trong 120 phút tới (2 tiếng) → Đổi table status → 'reserved'"
+      if (res.status === "confirmed" && diffMinutes <= 120 && diffMinutes > -120) {
         if (res.table.status === "available") {
           await prisma.table.update({
             where: { id: res.tableId },

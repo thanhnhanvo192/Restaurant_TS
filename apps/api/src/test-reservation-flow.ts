@@ -101,9 +101,9 @@ async function main() {
   // Scenario step 3: 17:00 — Bàn 1 tự động đổi sang RESERVED (trước 2 giờ)
   // To test the scheduler logic, we will mock the current time.
   const now = new Date();
-  const soon = new Date(now.getTime() + 25 * 60 * 1000); // 25 minutes from now
+  const soon = new Date(now.getTime() + 115 * 60 * 1000); // 115 minutes from now (within 2 hours window)
   const soonTimeStr = `${String(soon.getHours()).padStart(2, "0")}:${String(soon.getMinutes()).padStart(2, "0")}`;
-  console.log(`\n3. Testing scheduler upcoming reservation auto-block (within 30 mins):`);
+  console.log(`\n3. Testing scheduler upcoming reservation auto-block (within 2 hours):`);
   console.log(`   Current actual time: ${now.toTimeString()}`);
   console.log(`   Creating upcoming reservation at: ${soonTimeStr}`);
 
